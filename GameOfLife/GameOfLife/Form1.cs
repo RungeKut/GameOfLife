@@ -128,14 +128,23 @@ namespace GameOfLife
             {
                 var x = e.Location.X / resolution;
                 var y = e.Location.Y / resolution;
-                field[x,y] = true;
+                var validationPassed = ValidateMousePosition(x, y);
+                if (validationPassed)
+                    field[x,y] = true;
             }
             if (e.Button == MouseButtons.Right)
             {
                 var x = e.Location.X / resolution;
                 var y = e.Location.Y / resolution;
-                field[x, y] = false;
+                var validationPassed = ValidateMousePosition(x, y);
+                if (validationPassed)
+                    field[x, y] = false;
             }
+        }
+
+        private bool ValidateMousePosition(int x, int y)
+        {
+            return x >= 0 && y >= 0 && x < cols && y < rows;
         }
     }
 }

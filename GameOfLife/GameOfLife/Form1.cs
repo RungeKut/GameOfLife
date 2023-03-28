@@ -12,6 +12,7 @@ namespace GameOfLife
 {
     public partial class Form1 : Form
     {
+        private int currentGeneration = 0;
         private Graphics graphics;
         private int resolution;
         private bool[,] field;
@@ -25,6 +26,8 @@ namespace GameOfLife
         private void StartGame()
         {
             if (timer1.Enabled) return;
+            currentGeneration = 0;
+            this.Text = $"Generation {currentGeneration}";
             nudResolution.Enabled = false;
             nudDensity.Enabled = false;
             resolution = (int)nudResolution.Value;
@@ -75,6 +78,7 @@ namespace GameOfLife
             }
             field = newField;
             pictureBox1.Refresh();
+            this.Text = $"Generation {++currentGeneration}";
         }
 
         private int CountNeighbours(int x, int y)

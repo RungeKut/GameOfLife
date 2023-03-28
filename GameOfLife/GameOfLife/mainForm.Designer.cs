@@ -1,6 +1,6 @@
 ﻿namespace GameOfLife
 {
-    partial class Form1
+    partial class mainForm
     {
         /// <summary>
         /// Обязательная переменная конструктора.
@@ -97,6 +97,11 @@
             // nudDensity
             // 
             this.nudDensity.Location = new System.Drawing.Point(6, 71);
+            this.nudDensity.Maximum = new decimal(new int[] {
+            25,
+            0,
+            0,
+            0});
             this.nudDensity.Minimum = new decimal(new int[] {
             2,
             0,
@@ -107,7 +112,7 @@
             this.nudDensity.TabIndex = 3;
             this.nudDensity.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.nudDensity.Value = new decimal(new int[] {
-            2,
+            25,
             0,
             0,
             0});
@@ -170,13 +175,13 @@
             this.timer1.Interval = 40;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
-            // Form1
+            // mainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(654, 460);
             this.Controls.Add(this.splitContainer1);
-            this.Name = "Form1";
+            this.Name = "mainForm";
             this.Text = "GameOfLife";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.splitContainer1.Panel1.ResumeLayout(false);

@@ -38,6 +38,8 @@
             this.label1 = new System.Windows.Forms.Label();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.nudRefresh = new System.Windows.Forms.NumericUpDown();
+            this.label3 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -45,6 +47,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.nudDensity)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudResolution)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudRefresh)).BeginInit();
             this.SuspendLayout();
             // 
             // splitContainer1
@@ -58,6 +61,8 @@
             // 
             // splitContainer1.Panel1
             // 
+            this.splitContainer1.Panel1.Controls.Add(this.nudRefresh);
+            this.splitContainer1.Panel1.Controls.Add(this.label3);
             this.splitContainer1.Panel1.Controls.Add(this.bStop);
             this.splitContainer1.Panel1.Controls.Add(this.bStart);
             this.splitContainer1.Panel1.Controls.Add(this.nudDensity);
@@ -75,7 +80,7 @@
             // bStop
             // 
             this.bStop.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.bStop.Location = new System.Drawing.Point(3, 126);
+            this.bStop.Location = new System.Drawing.Point(6, 201);
             this.bStop.Name = "bStop";
             this.bStop.Size = new System.Drawing.Size(75, 23);
             this.bStop.TabIndex = 5;
@@ -86,7 +91,7 @@
             // bStart
             // 
             this.bStart.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.bStart.Location = new System.Drawing.Point(3, 97);
+            this.bStart.Location = new System.Drawing.Point(6, 172);
             this.bStart.Name = "bStart";
             this.bStart.Size = new System.Drawing.Size(75, 23);
             this.bStart.TabIndex = 4;
@@ -172,8 +177,37 @@
             // 
             // timer1
             // 
-            this.timer1.Interval = 40;
+            this.timer1.Interval = 200;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            // 
+            // nudRefresh
+            // 
+            this.nudRefresh.Location = new System.Drawing.Point(6, 122);
+            this.nudRefresh.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.nudRefresh.Name = "nudRefresh";
+            this.nudRefresh.Size = new System.Drawing.Size(72, 20);
+            this.nudRefresh.TabIndex = 7;
+            this.nudRefresh.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.nudRefresh.Value = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            this.nudRefresh.ValueChanged += new System.EventHandler(this.nudRefresh_ValueChanged);
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.label3.Location = new System.Drawing.Point(3, 103);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(61, 16);
+            this.label3.TabIndex = 6;
+            this.label3.Text = "Refresh";
             // 
             // mainForm
             // 
@@ -192,6 +226,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.nudDensity)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudResolution)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudRefresh)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -207,6 +242,8 @@
         private System.Windows.Forms.NumericUpDown nudDensity;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.NumericUpDown nudRefresh;
+        private System.Windows.Forms.Label label3;
     }
 }
 

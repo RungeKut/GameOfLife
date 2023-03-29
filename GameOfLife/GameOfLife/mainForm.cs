@@ -138,5 +138,10 @@ namespace GameOfLife
                 gameEngine.RemoveCell(x, y);
             }
         }
+
+        private void nudRefresh_ValueChanged(object sender, EventArgs e)
+        {
+            timer1.Interval = 1000 / (int)nudRefresh.Value;
+        }
     }
 }

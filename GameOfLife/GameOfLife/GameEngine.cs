@@ -14,12 +14,20 @@ namespace GameOfLife
         private bool[,] field;
         private readonly int rows;
         private readonly int cols;
-        
+        public enum StatusEngine
+        {
+            run,
+            pause,
+            stop
+        }
+        public StatusEngine Status { get; set; }
+
         public GameEngine(int rows, int cols, int density)
         {
             this.rows = rows;
             this.cols = cols;
             field = new bool[cols, rows];
+            Status = StatusEngine.stop;
             Random random = new Random();
             for (int x = 0; x < cols; x++)
             {

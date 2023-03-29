@@ -23,7 +23,7 @@ namespace GameOfLife
         private void StartGame()
         {
             if (timer1.Enabled) return;
-            
+            bStart.Text = "Pause";
             nudResolution.Enabled = false;
             nudDensity.Enabled = false;
             resolution = (int)nudResolution.Value;
@@ -40,6 +40,23 @@ namespace GameOfLife
             pictureBox1.Image = new Bitmap(pictureBox1.Width, pictureBox1.Height);
             graphics = Graphics.FromImage(pictureBox1.Image);
             timer1.Start();
+            gameEngine.Status = GameEngine.StatusEngine.run;
+        }
+
+        private void PauseGame()
+        {
+            if (!timer1.Enabled) return;
+            bStart.Text = "Resume";
+            timer1.Stop();
+            gameEngine.Status = GameEngine.StatusEngine.pause;
+        }
+
+        private void ResumeGame()
+        {
+            if (timer1.Enabled) return;
+            bStart.Text = "Pause";
+            timer1.Start();
+            gameEngine.Status = GameEngine.StatusEngine.run;
         }
 
         private void DrawNextGeneration()
@@ -67,9 +84,11 @@ namespace GameOfLife
         private void StopGame()
         {
             if (!timer1.Enabled) return;
+            bStart.Text = "Start";
             timer1.Stop();
             nudResolution.Enabled = true;
             nudDensity.Enabled = true;
+            gameEngine.Status = GameEngine.StatusEngine.stop;
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -79,7 +98,23 @@ namespace GameOfLife
 
         private void bStart_Click(object sender, EventArgs e)
         {
-            StartGame();
+            if (gameEngine != null)
+                switch (gameEngine.Status)
+                {
+                    case GameEngine.StatusEngine.stop:
+                        StartGame();
+                        break;
+                    case GameEngine.StatusEngine.run:
+                        PauseGame();
+                        break;
+                    case GameEngine.StatusEngine.pause:
+                        ResumeGame();
+                        break;
+                }
+            else
+            {
+                StartGame();
+            }
         }
 
         private void bStop_Click(object sender, EventArgs e)

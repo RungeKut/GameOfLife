@@ -17,6 +17,7 @@
 *.ilk
 *.log
 [Bb]in
+!Installer/Plugins/nsisXML/bin
 [Dd]ebug*/
 [Ll]og*/
 *.lib
@@ -24,3 +25,5 @@
 obj/
 [Rr]elease*/
 _ReSharper*/
+.vs/
+*.md.backup

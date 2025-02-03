@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -12,12 +13,47 @@ namespace GameOfLife
 {
     public partial class mainForm : Form
     {
-        private Graphics graphics;
-        private int resolution;
-        private GameEngine gameEngine;
+        private Graphics _graphics;
+        private int _resolution;
+        private GameEngine _gameEngine;
+        /// <summary>
+        /// Матрица потоков
+        /// </summary>
+        private Thread[,] _workers;
+        /// <summary>
+        /// Максимальное количество потоков
+        /// </summary>
+        private int _threadsCount;
+        /// <summary>
+        /// Число строк в матрице потоков
+        /// </summary>
+        private int _threadsRows;
+        /// <summary>
+        /// Число столбцов в матрице потоков
+        /// </summary>
+        private int _threadsCols;
         public mainForm()
         {
             InitializeComponent();
+            _threadsCount = Environment.ProcessorCount;
+            //Находим оптимальный размер матрицы потоков, чтобы вдальнейшем удобно соотнести рендер изображений
+            _threadsRows = _threadsCount;
+            _threadsCols = 1;
+            while (true)
+            {
+                if ((_threadsRows > _threadsCols) & (_threadsRows % 2 == 0))
+                {
+                    _threadsRows = _threadsRows / 2;
+                    _threadsCols = _threadsCols * 2;
+                }
+                else break;
+            }
+            if (_threadsRows > _threadsCols)
+            {
+                int _temp = _threadsCols;
+                _threadsCols = _threadsRows;
+                _threadsRows = _temp;
+            }
         }
 
         private void StartGame()
@@ -26,21 +62,46 @@ namespace GameOfLife
             bStart.Text = "Pause";
             nudResolution.Enabled = false;
             nudDensity.Enabled = false;
-            resolution = (int)nudResolution.Value;
+            _resolution = (int)nudResolution.Value;
 
-            gameEngine = new GameEngine
+            //Распараллеливание
+            /*
+            this.rows = rows;
+            this.cols = cols;
+            field = new bool[cols, rows];
+            _workers = new List<Thread>();
+            for (int i = 0; i < _threadsCount; i++)
+            {
+                int size = 2048 / _threadsCount;
+                var start = i * size;
+                var end = i == _threadsCount ? 2047 : start + size - 1;
+
+                WorkerParams workerParams = new WorkerParams()
+                {
+                    StartIndex = start,
+                    EndIndex = end
+                };
+                _workers.Add(new Thread(MWorker)
+                {
+                    IsBackground = true,
+                    Name = i.ToString()
+                });
+                _workers[i].Start(workerParams);
+            }*/
+
+            _gameEngine = new GameEngine
                 (
-                    rows: pictureBox1.Height / resolution,
-                    cols: pictureBox1.Width / resolution,
+                    rows: pictureBox1.Height / _resolution,
+                    cols: pictureBox1.Width / _resolution,
                     density: (int)nudDensity.Minimum + (int)nudDensity.Maximum - (int)nudDensity.Value
                 );
-           
-            this.Text = $"Generation {gameEngine.CurrentGeneration}";
+
+            this.Text = $"Generation {_gameEngine.CurrentGeneration}";
 
             pictureBox1.Image = new Bitmap(pictureBox1.Width, pictureBox1.Height);
-            graphics = Graphics.FromImage(pictureBox1.Image);
+            _graphics = Graphics.FromImage(pictureBox1.Image);
             timer1.Start();
-            gameEngine.Status = GameEngine.StatusEngine.run;
+            _gameEngine.Status = GameEngine.StatusEngine.run;
         }
 
         private void PauseGame()
@@ -48,7 +109,7 @@ namespace GameOfLife
             if (!timer1.Enabled) return;
             bStart.Text = "Resume";
             timer1.Stop();
-            gameEngine.Status = GameEngine.StatusEngine.pause;
+            _gameEngine.Status = GameEngine.StatusEngine.pause;
         }
 
         private void ResumeGame()
@@ -56,14 +117,14 @@ namespace GameOfLife
             if (timer1.Enabled) return;
             bStart.Text = "Pause";
             timer1.Start();
-            gameEngine.Status = GameEngine.StatusEngine.run;
+            _gameEngine.Status = GameEngine.StatusEngine.run;
         }
 
         private void DrawNextGeneration()
         {
-            graphics.Clear(Color.Black);
+            _graphics.Clear(Color.Black);
 
-            var field = gameEngine.GetCurrentGeneration();
+            var field = _gameEngine.GetCurrentGeneration();
 
             for (int x = 0; x < field.GetLength(0); x++)
             {
@@ -71,14 +132,14 @@ namespace GameOfLife
                 {
                     if (field[x, y])
                     {
-                        graphics.FillRectangle(Brushes.Crimson, x * resolution, y * resolution, resolution - 1, resolution - 1);
+                        _graphics.FillRectangle(Brushes.Crimson, x * _resolution, y * _resolution, _resolution - 1, _resolution - 1);
                     }
                 }
             }
-            
+
             pictureBox1.Refresh();
-            this.Text = $"Generation {gameEngine.CurrentGeneration}";
-            gameEngine.NextGeneration();
+            this.Text = $"Generation {_gameEngine.CurrentGeneration}";
+            _gameEngine.NextGeneration();
         }
 
         private void StopGame()
@@ -88,7 +149,7 @@ namespace GameOfLife
             timer1.Stop();
             nudResolution.Enabled = true;
             nudDensity.Enabled = true;
-            gameEngine.Status = GameEngine.StatusEngine.stop;
+            _gameEngine.Status = GameEngine.StatusEngine.stop;
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -98,8 +159,8 @@ namespace GameOfLife
 
         private void bStart_Click(object sender, EventArgs e)
         {
-            if (gameEngine != null)
-                switch (gameEngine.Status)
+            if (_gameEngine != null)
+                switch (_gameEngine.Status)
                 {
                     case GameEngine.StatusEngine.stop:
                         StartGame();
@@ -127,15 +188,15 @@ namespace GameOfLife
             if (!timer1.Enabled) return;
             if (e.Button == MouseButtons.Left)
             {
-                var x = e.Location.X / resolution;
-                var y = e.Location.Y / resolution;
-                gameEngine.AddCell(x, y);
+                var x = e.Location.X / _resolution;
+                var y = e.Location.Y / _resolution;
+                _gameEngine.AddCell(x, y);
             }
             if (e.Button == MouseButtons.Right)
             {
-                var x = e.Location.X / resolution;
-                var y = e.Location.Y / resolution;
-                gameEngine.RemoveCell(x, y);
+                var x = e.Location.X / _resolution;
+                var y = e.Location.Y / _resolution;
+                _gameEngine.RemoveCell(x, y);
             }
         }
 

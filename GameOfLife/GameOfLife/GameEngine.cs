@@ -8,7 +8,7 @@ namespace GameOfLife
         /// <summary>
         /// Текущий номер 
         /// </summary>
-        public uint CurrentGeneration { get; private set; }
+        public int CurrentGeneration { get; private set; }
         /// <summary>
         /// Текущее состояние мира
         /// </summary>
@@ -16,11 +16,11 @@ namespace GameOfLife
         /// <summary>
         /// Горизонтальный размер мира
         /// </summary>
-        public ulong Rows { get; private set; }
+        public int Rows { get; private set; }
         /// <summary>
         /// Вертикальный размер мира
         /// </summary>
-        public ulong Cols { get; private set; }
+        public int Cols { get; private set; }
         /// <summary>
         /// Матрица потоков
         /// </summary>
@@ -68,7 +68,7 @@ namespace GameOfLife
             #endregion
         }
 
-        public void ResizeWorld(ulong rows, ulong cols)
+        public void ResizeWorld(int rows, int cols)
         {
             this.Rows = rows;
             this.Cols = cols;
@@ -78,16 +78,16 @@ namespace GameOfLife
         public void FillRandom(int density)
         {
             Random random = new Random();
-            for (ulong x = 0; x < Cols; x++)
+            for (int x = 0; x < Cols; x++)
             {
-                for (ulong y = 0; y < Rows; y++)
+                for (int y = 0; y < Rows; y++)
                 {
                     CurrentWorldState[x, y] = random.Next(density) == 0;
                 }
             }
         }
 
-        public bool[,] ApplyLifeRules(bool[,] currentWorldState, ulong cols, ulong rows)
+        public bool[,] ApplyLifeRules(bool[,] currentWorldState, int cols, int rows)
         {
             bool[,] newWorldState = new bool[cols, rows]; // Создаем новое состояние мира
             return newWorldState;
@@ -97,9 +97,9 @@ namespace GameOfLife
         {
             var newField = new bool[Cols, Rows];
 
-            for (ulong x = 0; x < Cols; x++)
+            for (int x = 0; x < Cols; x++)
             {
-                for (ulong y = 0; y < Rows; y++)
+                for (int y = 0; y < Rows; y++)
                 {
                     var neighboursCount = CountNeighbours(x, y, 1);
                     var hasLife = CurrentWorldState[x, y];
@@ -125,9 +125,9 @@ namespace GameOfLife
         public bool[,] GetCurrentGeneration()
         {
             var result = new bool[Cols, Rows];
-            for (ulong x = 0; x < Cols; x++)
+            for (int x = 0; x < Cols; x++)
             {
-                for (ulong y = 0; y < Rows; y++)
+                for (int y = 0; y < Rows; y++)
                 {
                     result[x, y] = CurrentWorldState[x, y];
                 }
@@ -142,13 +142,13 @@ namespace GameOfLife
         /// <param name="y">Вертикальная координата</param>
         /// <param name="r">Считать в радиусе</param>
         /// <returns></returns>
-        private int CountNeighbours(ulong x, ulong y, uint r)
+        private int CountNeighbours(int x, int y, int r)
         {
             // Итак допустим я нахожусь по координатам x,y
             int count = 0; // Переменная для подсчета количества моих соседей
-            for (ulong i = 0; i < (2 * r + 1); i++) // Определяем ширину квадрата вокруг меня заданным радиусом
+            for (int i = 0; i < (2 * r + 1); i++) // Определяем ширину квадрата вокруг меня заданным радиусом
             {
-                for (ulong j = 0; j < (2 * r + 1); j++) // Определяем высоту квадрата вокруг меня заданным радиусом
+                for (int j = 0; j < (2 * r + 1); j++) // Определяем высоту квадрата вокруг меня заданным радиусом
                 {
                     var col = (x + (i - 1) + Cols) % Cols; // Определяем горизонтальную координату соседа учитывая границы мира (закольцовывание по горизонтали)
                     var row = (y + (j - 1) + Rows) % Rows; // Определяем вертикальную координату соседа учитывая границы мира (закольцовывание по вертикали)
@@ -160,23 +160,23 @@ namespace GameOfLife
             return count;
         }
 
-        private bool ValidateCellPosition(ulong x, ulong y)
+        private bool ValidateCellPosition(int x, int y)
         {
             return x >= 0 && y >= 0 && x < Cols && y < Rows;
         }
 
-        private void UpdateCell(ulong x, ulong y, bool state)
+        private void UpdateCell(int x, int y, bool state)
         {
             if (ValidateCellPosition(x, y))
                 CurrentWorldState[x, y] = state;
         }
 
-        public void AddCell(ulong x, ulong y)
+        public void AddCell(int x, int y)
         {
             UpdateCell(x, y, state: true);
         }
 
-        public void RemoveCell(ulong x, ulong y)
+        public void RemoveCell(int x, int y)
         {
             UpdateCell(x, y, state: false);
         }

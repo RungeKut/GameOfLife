@@ -8,7 +8,7 @@ namespace GameOfLife
     public partial class mainForm : Form
     {
         private int _worldHeight;
-        private int _worldWidht;
+        private int _worldWidth;
         private Graphics _graphics;
         private GameEngine _gameEngine;
         private Size _prvSize;
@@ -16,13 +16,11 @@ namespace GameOfLife
         private int _currentZoomY;
         private int _lastZoomX;
         private int _lastZoomY;
-        private int _worldHeightDrawBegin = 0;
+        private int _worldHeightDrawBegin;
         private int _worldHeightDrawEnd;
-        private int _worldWidthDrawBegin = 0;
+        private int _worldWidthDrawBegin;
         private int _worldWidthDrawEnd;
-        private int _pictureHeight { get { return _worldHeight/_zoomCount; } }
-        private int _pictureWidth { get { return _worldWidht/_zoomCount; } }
-        private int _zoomCount = 1;
+        private int _zoomCount;
         private const int ZOOM_MAX = 100; // Это максимальная кратность увеличения _resolution
 
         public mainForm()
@@ -32,14 +30,11 @@ namespace GameOfLife
             _gameEngine = new GameEngine();
 
             _worldHeight = (int)WorldHeightNumericUpDown.Value;
-            _worldWidht = (int)WorldWidthNumericUpDown.Value;
-            _gameEngine.ResizeWorld(_worldHeight, _worldWidht);
+            _worldWidth = (int)WorldWidthNumericUpDown.Value;
+            _gameEngine.ResizeWorld(_worldHeight, _worldWidth);
             this.Text = $"Generation {_gameEngine.CurrentGeneration}";
             ResizePictureBox();
-            _worldHeightDrawEnd = _worldHeight > pictureBox.Height ? pictureBox.Height : _worldHeight;
-            _worldWidthDrawEnd = _worldWidht > pictureBox.Width ? pictureBox.Width : _worldWidht;
-            _currentZoomX = pictureBox.Width / 2;
-            _currentZoomY = pictureBox.Height / 2;
+            ResetZoom();
             pictureBox.MouseWheel += PictureBox_MouseWheel;
         }
 
@@ -75,40 +70,88 @@ namespace GameOfLife
             DrawCurrentGeneration();
         }
 
-        
+        private void CalculatingScale()
+        {
+            pictureBox.Image = new Bitmap(pictureBox.Width, pictureBox.Height);
+            _graphics = Graphics.FromImage(pictureBox.Image);
+            DrawCurrentGeneration();
+        }
+
+        private void ResetZoom()
+        {
+            _zoomCount = 1;
+            _worldHeightDrawBegin = 0;
+            _worldWidthDrawBegin = 0;
+            _worldHeightDrawEnd = _worldHeight > pictureBox.Height ? pictureBox.Height : _worldHeight;
+            _worldWidthDrawEnd = _worldWidth > pictureBox.Width ? pictureBox.Width : _worldWidth;
+            _currentZoomX = pictureBox.Width / 2;
+            _currentZoomY = pictureBox.Height / 2;
+        }
+
         private void PictureBox_MouseWheel(object sender, MouseEventArgs e) // Событие вращения колеса
         {
             
             int _offsetWidth = e.Location.X - (pictureBox.Width / 2) / _zoomCount;
             int _offsetHeight = e.Location.Y - (pictureBox.Height / 2) / _zoomCount;
 
-            _worldHeightDrawBegin += _offsetHeight;
-            _worldHeightDrawEnd += _offsetHeight;
-            _worldWidthDrawBegin += _offsetWidth;
-            _worldWidthDrawEnd += _offsetWidth;
-
-            _lastZoomX = _currentZoomX;
-            _lastZoomY = _currentZoomY;
-
             if (e.Delta > 0) // Колесико вверх
             {
-                _zoomCount = _zoomCount * 2;
-                if (_zoomCount > ZOOM_MAX) { _zoomCount = ZOOM_MAX; return; }
-                _worldHeightDrawBegin += (pictureBox.Height / 2) / _zoomCount;
-                _worldHeightDrawEnd -= (pictureBox.Height / 2) / _zoomCount;
-                _worldWidthDrawBegin += (pictureBox.Width / 2) / _zoomCount;
-                _worldWidthDrawEnd -= (pictureBox.Width / 2) / _zoomCount;
+                //_zoomCount = _zoomCount * 2;
+                _zoomCount++;
+                if (_zoomCount > ZOOM_MAX) 
+                { 
+                    _zoomCount = ZOOM_MAX; 
+                    return; 
+                }
+
+                _currentZoomX += _offsetWidth;
+                _currentZoomY += _offsetHeight;
+                _worldHeightDrawBegin = _currentZoomX - (pictureBox.Height / 2 / _zoomCount);
+                _worldHeightDrawEnd = _currentZoomX + (pictureBox.Height / 2 / _zoomCount);
+                _worldWidthDrawBegin = _currentZoomY - (pictureBox.Width / 2 / _zoomCount);
+                _worldWidthDrawEnd = _currentZoomY + (pictureBox.Width / 2 / _zoomCount);
             }
             else // Колесико вниз
             {
-                _zoomCount = _zoomCount / 2;
-                if (_zoomCount < 1) { _zoomCount = 1; return; }
-                _worldHeightDrawBegin -= (pictureBox.Height / 2) / _zoomCount;
-                _worldHeightDrawEnd += (pictureBox.Height / 2) / _zoomCount;
-                _worldWidthDrawBegin -= (pictureBox.Width / 2) / _zoomCount;
-                _worldWidthDrawEnd += (pictureBox.Width / 2) / _zoomCount;
+                _currentZoomX -= _offsetWidth;
+                _currentZoomY -= _offsetHeight;
+                _worldHeightDrawBegin = _currentZoomX + (pictureBox.Height / 2 / _zoomCount);
+                _worldHeightDrawEnd = _currentZoomX - (pictureBox.Height / 2 / _zoomCount);
+                _worldWidthDrawBegin = _currentZoomY + (pictureBox.Width / 2 / _zoomCount);
+                _worldWidthDrawEnd = _currentZoomY + (pictureBox.Width / 2 / _zoomCount);
+                //_zoomCount = _zoomCount / 2;
+                _zoomCount--;
+                if (_zoomCount < 1) 
+                { 
+                    _zoomCount = 1; 
+                    ResetZoom(); 
+                    return; 
+                }
+                else
+                {
+
+                }
             }
-            ResizePictureBox();
+
+            _worldHeightDrawBegin = _currentZoomX > _worldHeight ? 0 : _worldHeightDrawBegin;
+            _worldWidthDrawBegin = _currentZoomY > _worldWidth ? 0 : _worldWidthDrawBegin;
+
+            _worldHeightDrawBegin = _worldHeightDrawBegin < 0 ? 0 : _worldHeightDrawBegin;
+            _worldWidthDrawBegin = _worldWidthDrawBegin < 0 ? 0 : _worldWidthDrawBegin;
+
+            _worldHeightDrawBegin = _worldHeightDrawBegin > _worldHeight ? _worldHeight : _worldHeightDrawBegin;
+            _worldWidthDrawBegin = _worldWidthDrawBegin > _worldWidth ? _worldWidth : _worldWidthDrawBegin;
+
+            //_worldHeightDrawEnd = _worldHeightDrawEnd > pictureBox.Height ? pictureBox.Height : _worldHeightDrawEnd;
+            //_worldWidthDrawEnd = _worldWidthDrawEnd > pictureBox.Height ? pictureBox.Height : _worldWidthDrawEnd;
+
+            //_worldHeightDrawEnd = _worldHeight > pictureBox.Height ? pictureBox.Height : _worldHeight;
+            //_worldWidthDrawEnd = _worldWidht > pictureBox.Width ? pictureBox.Width : _worldWidht;
+
+            _worldHeightDrawEnd = _worldHeight > _worldHeightDrawEnd ? _worldHeightDrawEnd : _worldHeight;
+            _worldWidthDrawEnd = _worldWidth > _worldWidthDrawEnd ? _worldWidthDrawEnd : _worldWidth;
+
+            DrawCurrentGeneration();
         }
         #endregion
 
@@ -225,13 +268,13 @@ namespace GameOfLife
         private void WorldHeightNumericUpDown_ValueChanged(object sender, EventArgs e)
         {
             _worldHeight = (int)WorldHeightNumericUpDown.Value;
-            _gameEngine.ResizeWorld(_worldHeight, _worldWidht);
+            _gameEngine.ResizeWorld(_worldHeight, _worldWidth);
         }
 
         private void WorldWidthNumericUpDown_ValueChanged(object sender, EventArgs e)
         {
-            _worldWidht = (int)WorldWidthNumericUpDown.Value;
-            _gameEngine.ResizeWorld(_worldHeight, _worldWidht);
+            _worldWidth = (int)WorldWidthNumericUpDown.Value;
+            _gameEngine.ResizeWorld(_worldHeight, _worldWidth);
         }
 
         private void nudDensity_ValueChanged(object sender, EventArgs e)

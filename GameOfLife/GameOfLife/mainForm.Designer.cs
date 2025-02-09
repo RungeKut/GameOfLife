@@ -43,6 +43,7 @@
             this.label2 = new System.Windows.Forms.Label();
             this.pictureBox = new System.Windows.Forms.PictureBox();
             this.timer = new System.Windows.Forms.Timer(this.components);
+            this.GridCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -65,6 +66,7 @@
             // 
             // splitContainer1.Panel1
             // 
+            this.splitContainer1.Panel1.Controls.Add(this.GridCheckBox);
             this.splitContainer1.Panel1.Controls.Add(this.WorldWidthNumericUpDown);
             this.splitContainer1.Panel1.Controls.Add(this.WorldHeightNumericUpDown);
             this.splitContainer1.Panel1.Controls.Add(this.label5);
@@ -80,7 +82,7 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.pictureBox);
-            this.splitContainer1.Size = new System.Drawing.Size(690, 487);
+            this.splitContainer1.Size = new System.Drawing.Size(949, 487);
             this.splitContainer1.SplitterDistance = 88;
             this.splitContainer1.TabIndex = 0;
             // 
@@ -255,8 +257,7 @@
             this.pictureBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pictureBox.Location = new System.Drawing.Point(0, 0);
             this.pictureBox.Name = "pictureBox";
-            this.pictureBox.Size = new System.Drawing.Size(594, 483);
-            this.pictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pictureBox.Size = new System.Drawing.Size(853, 483);
             this.pictureBox.TabIndex = 0;
             this.pictureBox.TabStop = false;
             this.pictureBox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pictureBox_MouseMove);
@@ -266,11 +267,21 @@
             this.timer.Interval = 200;
             this.timer.Tick += new System.EventHandler(this.timer_Tick);
             // 
+            // GridCheckBox
+            // 
+            this.GridCheckBox.AutoSize = true;
+            this.GridCheckBox.Location = new System.Drawing.Point(11, 456);
+            this.GridCheckBox.Name = "GridCheckBox";
+            this.GridCheckBox.Size = new System.Drawing.Size(45, 17);
+            this.GridCheckBox.TabIndex = 13;
+            this.GridCheckBox.Text = "Grid";
+            this.GridCheckBox.UseVisualStyleBackColor = true;
+            // 
             // mainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(690, 487);
+            this.ClientSize = new System.Drawing.Size(949, 487);
             this.Controls.Add(this.splitContainer1);
             this.Name = "mainForm";
             this.Text = "GameOfLife";
@@ -306,6 +317,7 @@
         private System.Windows.Forms.NumericUpDown WorldHeightNumericUpDown;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.CheckBox GridCheckBox;
     }
 }
 

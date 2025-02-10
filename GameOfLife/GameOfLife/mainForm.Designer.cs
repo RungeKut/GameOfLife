@@ -89,9 +89,7 @@
             // GridCheckBox
             // 
             this.GridCheckBox.AutoSize = true;
-            this.GridCheckBox.Checked = true;
-            this.GridCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.GridCheckBox.Location = new System.Drawing.Point(11, 456);
+            this.GridCheckBox.Location = new System.Drawing.Point(4, 296);
             this.GridCheckBox.Name = "GridCheckBox";
             this.GridCheckBox.Size = new System.Drawing.Size(45, 17);
             this.GridCheckBox.TabIndex = 13;
@@ -204,7 +202,7 @@
             this.bStop.Name = "bStop";
             this.bStop.Size = new System.Drawing.Size(75, 23);
             this.bStop.TabIndex = 12;
-            this.bStop.Text = "Stop";
+            this.bStop.Text = "Reset";
             this.bStop.UseVisualStyleBackColor = true;
             this.bStop.Click += new System.EventHandler(this.bStop_Click);
             // 

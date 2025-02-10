@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Numerics;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace GameOfLife
 {
@@ -30,6 +31,10 @@ namespace GameOfLife
         private int _offsetHeight { get; set; }
         private float _halfSizeWidth { get; set; }
         private float _halfSizeHeight { get; set; }
+        private float _halfSizeAbroadCellWidth { get; set; }
+        private float _halfSizeAbroadCellHeight { get; set; }
+        private int _windowSizeWidth { get; set; }
+        private int _windowSizeHeight { get; set; }
         /// <summary>
         /// Количество клеток, убираемое с каждой меньшей стороны (с большей стороны - сколько получится)
         /// </summary>
@@ -57,6 +62,8 @@ namespace GameOfLife
             ResizePictureBox();
             ResetZoom();
             pictureBox.MouseWheel += PictureBox_MouseWheel;
+            CalculatingSize();
+            UpdateFormTitle();
         }
 
         #region Отрисовка PictureBox
@@ -64,19 +71,17 @@ namespace GameOfLife
         private void pictureBox_MouseMove(object sender, MouseEventArgs e)
         {
             CalculatingScale(e);
-            //if (e.Button == MouseButtons.Left)
-            //{
-            //    ulong x = (ulong)e.Location.X / (ulong)_resolution;
-            //    ulong y = (ulong)e.Location.Y / (ulong)_resolution;
-            //    _gameEngine.AddCell(x, y);
-            //}
-            //if (e.Button == MouseButtons.Right)
-            //{
-            //    ulong x = (ulong)e.Location.X / (ulong)_resolution;
-            //    ulong y = (ulong)e.Location.Y / (ulong)_resolution;
-            //    _gameEngine.RemoveCell(x, y);
-            //}
-            DrawCurrentGeneration();
+            if (e.Button == MouseButtons.Left)
+            {
+                _gameEngine.AddCell(_offsetWorldX, _offsetWorldY);
+                DrawCurrentGeneration();
+            }
+            if (e.Button == MouseButtons.Right)
+            {
+                _gameEngine.RemoveCell(_offsetWorldX, _offsetWorldY);
+                DrawCurrentGeneration();
+            }
+            UpdateFormTitle();
         }
 
         private float Truncate(float a) { return a - (float)Math.Truncate(a); }
@@ -86,41 +91,54 @@ namespace GameOfLife
             pictureBox.SuspendLayout();
             _graphics.Clear(Color.Black);
 
-            var field = _gameEngine.GetCurrentGeneration();
+            var _field = _gameEngine.GetCurrentGeneration();
 
             if (GridCheckBox.Checked)
             {
-                Pen style = new Pen(Color.DarkGray, 1);// цвет линии и ширина
-                for (int x = 0; x < pictureBox.Width / _zoomCount + 1; x++)
+                Pen _style = new Pen(Color.DarkGray, 1);// цвет линии и ширина
+                for (int x = 0; x < _windowSizeWidth + 1; x++)
                 {
-                    int tempX = x * _zoomCount + (int)((Truncate((float)pictureBox.Width / _zoomCount) / 2) * _zoomCount);
-                    _graphics.DrawLine(style, tempX, 0, tempX, pictureBox.Height);
+                    int _tempX = x * _zoomCount + (int)(_halfSizeAbroadCellWidth * _zoomCount);
+                    _graphics.DrawLine(_style, _tempX, 0, _tempX, pictureBox.Height);
                 }
-                for (int y = 0; y < pictureBox.Height / _zoomCount + 1; y++)
+                for (int y = 0; y < _windowSizeHeight + 1; y++)
                 {
-                    int tempY = y * _zoomCount + (int)((Truncate((float)pictureBox.Height / _zoomCount) / 2) * _zoomCount);
-                    _graphics.DrawLine(style, 0, tempY, pictureBox.Width, tempY);
+                    int _tempY = y * _zoomCount + (int)(_halfSizeAbroadCellHeight * _zoomCount);
+                    _graphics.DrawLine(_style, 0, _tempY, pictureBox.Width, _tempY);
                 }
             }
 
-            for (int x = _worldWidthDrawBegin; x < _worldWidthDrawEnd; x++)
+            for (int x = -1; x < _windowSizeWidth + 1; x++)
             {
-                int tempX = (x - 1) * _zoomCount + (int)((Truncate((float)pictureBox.Width / _zoomCount) / 2) * _zoomCount);
-                for (int y = _worldHeightDrawBegin; y < _worldHeightDrawEnd; y++)
+                int _tempX = x * _zoomCount + (int)(_halfSizeAbroadCellWidth * _zoomCount);
+                int _worldX;
+                if (x + _worldWidthDrawBegin >= 0) _worldX = (x + _worldWidthDrawBegin) % _worldWidth;
+                else _worldX = _worldWidth + (x + _worldWidthDrawBegin) % _worldWidth;
+
+                for (int y = -1; y < _windowSizeHeight + 1; y++)
                 {
-                    int tempY = (y - 1) * _zoomCount + (int)((Truncate((float)pictureBox.Height / _zoomCount) / 2) * _zoomCount);
-                    if (field[x >= 0 ? x : _worldWidth + x, y >= 0 ? y : _worldHeight + y])
+                    int _tempY = y * _zoomCount + (int)(_halfSizeAbroadCellHeight * _zoomCount);
+                    int _worldY;
+                    if (y + _worldHeightDrawBegin >= 0) _worldY = (y + _worldHeightDrawBegin) % _worldHeight;
+                    else _worldY = _worldHeight + (y + _worldHeightDrawBegin) % _worldHeight;
+
+                    if (_field[_worldX, _worldY])
                     {
                         if (_zoomCount > 1)
-                            _graphics.FillRectangle(Brushes.Crimson, tempX + 1, tempY + 1, _zoomCount - 1, _zoomCount - 1);
+                            _graphics.FillRectangle(Brushes.Crimson, _tempX + 1, _tempY + 1, _zoomCount - 1, _zoomCount - 1);
                         else
-                            _graphics.FillRectangle(Brushes.Crimson, tempX, tempY, 1, 1);
+                            _graphics.FillRectangle(Brushes.Crimson, _tempX, _tempY, 1, 1);
                     }
                 }
             }
             pictureBox.ResumeLayout();
-            this.Text = $"Generation:{_gameEngine.CurrentGeneration} Zoom:{_zoomCount} world_X:{_offsetWorldX} world_Y:{_offsetWorldY} mouse_X:{_offsetWidth:F2} mouse_Y:{_offsetHeight:F2} hs_X:{_halfSizeWidth:F2} hs_Y:{_halfSizeHeight:F2}";
+            UpdateFormTitle();
             pictureBox.Refresh();
+        }
+
+        private void UpdateFormTitle()
+        {
+            this.Text = $"Generation:{_gameEngine.CurrentGeneration} Zoom:{_zoomCount} world_X:{_offsetWorldX} world_Y:{_offsetWorldY} mouse_X:{_offsetWidth:F2} mouse_Y:{_offsetHeight:F2} hs_X:{_halfSizeWidth:F2} hs_Y:{_halfSizeHeight:F2}";
         }
 
         private void ResizePictureBox()
@@ -153,11 +171,17 @@ namespace GameOfLife
             else _offsetWorldY = (_currentWorldY + (_worldHeight + _offsetHeight)) % _worldHeight;
         }
 
-        private void CalculatingHalfSize()
+        private void CalculatingSize()
         {
             // Размер половины изображения с учетом масштаба (количество клеток)
             _halfSizeWidth = (float)pictureBox.Width / (2 * _zoomCount);
             _halfSizeHeight = (float)pictureBox.Height / (2 * _zoomCount);
+            // Размер окна на мир с учетом масштаба (количество клеток)
+            _windowSizeWidth = pictureBox.Width / _zoomCount;
+            _windowSizeHeight = pictureBox.Height / _zoomCount;
+            //Размер половины неубирающейся части клетки на экран
+            _halfSizeAbroadCellWidth = Truncate((float)pictureBox.Width / _zoomCount) / 2;
+            _halfSizeAbroadCellHeight = Truncate((float)pictureBox.Height / _zoomCount) / 2;
         }
 
         private void ResetZoom()
@@ -167,7 +191,6 @@ namespace GameOfLife
             _worldHeightDrawBegin = 0;
             _worldWidthDrawEnd = _worldWidth > pictureBox.Width ? pictureBox.Width : _worldWidth;
             _worldHeightDrawEnd = _worldHeight > pictureBox.Height ? pictureBox.Height : _worldHeight;
-
             _currentWorldX = _worldWidth / 2;
             _currentWorldY = _worldHeight / 2;
         }
@@ -176,7 +199,6 @@ namespace GameOfLife
         private void PictureBox_MouseWheel(object sender, MouseEventArgs e) // Событие вращения колеса
         {
             bool update = false;
-            CalculatingScale(e);
             if (e.Delta > 0) // Колесико вверх
             {
                 _zoomCount = _zoomCount << 1;
@@ -186,43 +208,23 @@ namespace GameOfLife
             else // Колесико вниз
             {
                 _zoomCount = _zoomCount >> 1;
-                if (_zoomCount <= 1) { _zoomCount = 1; ResetZoom(); }
+                if (_zoomCount < 1) { _zoomCount = 1; }
                 else update = true;
             }
-            CalculatingHalfSize();
-
-            _worldWidthDrawBegin = _currentWorldX + _offsetWidth;
-            _worldHeightDrawBegin = _currentWorldY + _offsetHeight;
-
-            _worldWidthDrawEnd = _currentWorldX + _offsetWidth;
-            _worldHeightDrawEnd = _currentWorldY + _offsetHeight;
-
             if (update)
             {
                 // запоминаем перестроенные координаты
                 _currentWorldX = _offsetWorldX;
                 _currentWorldY = _offsetWorldY;
+
+                CalculatingScale(e);
+                CalculatingSize();
+
+                _worldWidthDrawBegin = (_currentWorldX - (int)Math.Truncate(_halfSizeWidth)) % _worldWidth;
+                _worldHeightDrawBegin = (_currentWorldY - (int)Math.Truncate(_halfSizeHeight)) % _worldHeight;
+
+                DrawCurrentGeneration();
             }
-            
-            //_worldHeightDrawBegin = _currentZoomX > _worldHeight ? 0 : _worldHeightDrawBegin;
-            //_worldWidthDrawBegin = _currentZoomY > _worldWidth ? 0 : _worldWidthDrawBegin;
-
-            //_worldHeightDrawBegin = _worldHeightDrawBegin < 0 ? 0 : _worldHeightDrawBegin;
-            //_worldWidthDrawBegin = _worldWidthDrawBegin < 0 ? 0 : _worldWidthDrawBegin;
-
-            //_worldHeightDrawBegin = _worldHeightDrawBegin > _worldHeight ? _worldHeight : _worldHeightDrawBegin;
-            //_worldWidthDrawBegin = _worldWidthDrawBegin > _worldWidth ? _worldWidth : _worldWidthDrawBegin;
-
-            //_worldHeightDrawEnd = _worldHeightDrawEnd > pictureBox.Height ? pictureBox.Height : _worldHeightDrawEnd;
-            //_worldWidthDrawEnd = _worldWidthDrawEnd > pictureBox.Height ? pictureBox.Height : _worldWidthDrawEnd;
-
-            //_worldHeightDrawEnd = _worldHeight > pictureBox.Height ? pictureBox.Height : _worldHeight;
-            //_worldWidthDrawEnd = _worldWidht > pictureBox.Width ? pictureBox.Width : _worldWidht;
-
-            //_worldHeightDrawEnd = _worldHeight > _worldHeightDrawEnd ? _worldHeightDrawEnd : _worldHeight;
-            //_worldWidthDrawEnd = _worldWidth > _worldWidthDrawEnd ? _worldWidthDrawEnd : _worldWidth;
-
-            DrawCurrentGeneration();
         }
         #endregion
 
@@ -231,6 +233,7 @@ namespace GameOfLife
         {
             if (timer.Enabled) return;
             bStart.Text = "Pause";
+            bStop.Text = "Stop";
             nudDensity.Enabled = false;
 
             timer.Start();
@@ -241,6 +244,7 @@ namespace GameOfLife
         {
             if (!timer.Enabled) return;
             bStart.Text = "Resume";
+            bStop.Text = "Reset";
             timer.Stop();
             _gameEngine._statusEngine = StatusEngine.pause;
         }
@@ -249,6 +253,7 @@ namespace GameOfLife
         {
             if (timer.Enabled) return;
             bStart.Text = "Pause";
+            bStop.Text = "Stop";
             timer.Start();
             _gameEngine._statusEngine = StatusEngine.run;
         }
@@ -257,6 +262,7 @@ namespace GameOfLife
         {
             if (!timer.Enabled) return;
             bStart.Text = "Start";
+            bStop.Text = "Reset";
             timer.Stop();
             nudDensity.Enabled = true;
             _gameEngine._statusEngine = StatusEngine.stop;
@@ -293,7 +299,17 @@ namespace GameOfLife
 
         private void bStop_Click(object sender, EventArgs e)
         {
-            StopGame();
+            if (_gameEngine != null)
+                switch (_gameEngine._statusEngine)
+                {
+                    case StatusEngine.run:
+                        StopGame();
+                        break;
+                    default:
+                        _gameEngine.ResizeWorld(_worldHeight, _worldWidth);
+                        DrawCurrentGeneration();
+                        break;
+                }
         }
 
         private void nudRefresh_ValueChanged(object sender, EventArgs e)

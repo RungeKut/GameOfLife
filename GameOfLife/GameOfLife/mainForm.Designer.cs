@@ -30,6 +30,7 @@
         {
             this.components = new System.ComponentModel.Container();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.GridCheckBox = new System.Windows.Forms.CheckBox();
             this.WorldWidthNumericUpDown = new System.Windows.Forms.NumericUpDown();
             this.WorldHeightNumericUpDown = new System.Windows.Forms.NumericUpDown();
             this.label5 = new System.Windows.Forms.Label();
@@ -43,7 +44,6 @@
             this.label2 = new System.Windows.Forms.Label();
             this.pictureBox = new System.Windows.Forms.PictureBox();
             this.timer = new System.Windows.Forms.Timer(this.components);
-            this.GridCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -85,6 +85,18 @@
             this.splitContainer1.Size = new System.Drawing.Size(949, 487);
             this.splitContainer1.SplitterDistance = 88;
             this.splitContainer1.TabIndex = 0;
+            // 
+            // GridCheckBox
+            // 
+            this.GridCheckBox.AutoSize = true;
+            this.GridCheckBox.Checked = true;
+            this.GridCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.GridCheckBox.Location = new System.Drawing.Point(11, 456);
+            this.GridCheckBox.Name = "GridCheckBox";
+            this.GridCheckBox.Size = new System.Drawing.Size(45, 17);
+            this.GridCheckBox.TabIndex = 13;
+            this.GridCheckBox.Text = "Grid";
+            this.GridCheckBox.UseVisualStyleBackColor = true;
             // 
             // WorldWidthNumericUpDown
             // 
@@ -266,16 +278,6 @@
             // 
             this.timer.Interval = 200;
             this.timer.Tick += new System.EventHandler(this.timer_Tick);
-            // 
-            // GridCheckBox
-            // 
-            this.GridCheckBox.AutoSize = true;
-            this.GridCheckBox.Location = new System.Drawing.Point(11, 456);
-            this.GridCheckBox.Name = "GridCheckBox";
-            this.GridCheckBox.Size = new System.Drawing.Size(45, 17);
-            this.GridCheckBox.TabIndex = 13;
-            this.GridCheckBox.Text = "Grid";
-            this.GridCheckBox.UseVisualStyleBackColor = true;
             // 
             // mainForm
             // 

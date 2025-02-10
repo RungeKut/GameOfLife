@@ -175,29 +175,35 @@ namespace GameOfLife
         // Масштабирование относительно координат мыши
         private void PictureBox_MouseWheel(object sender, MouseEventArgs e) // Событие вращения колеса
         {
+            bool update = false;
             CalculatingScale(e);
             if (e.Delta > 0) // Колесико вверх
             {
                 _zoomCount = _zoomCount << 1;
                 if (_zoomCount > ZOOM_MAX) { _zoomCount = ZOOM_MAX; }
+                else update = true;
             }
             else // Колесико вниз
             {
                 _zoomCount = _zoomCount >> 1;
                 if (_zoomCount <= 1) { _zoomCount = 1; ResetZoom(); }
+                else update = true;
             }
             CalculatingHalfSize();
 
-            // запоминаем перестроенные координаты
-            _currentWorldX = _offsetWorldX;
-            _currentWorldY = _offsetWorldY;
+            _worldWidthDrawBegin = _currentWorldX + _offsetWidth;
+            _worldHeightDrawBegin = _currentWorldY + _offsetHeight;
 
-            _worldWidthDrawBegin = (_currentWorldX + _offsetWidth - (int)Math.Truncate(_halfSizeWidth)) % _worldWidth;
-            _worldHeightDrawBegin = (_currentWorldY + _offsetHeight - (int)Math.Truncate(_halfSizeHeight)) % _worldHeight;
+            _worldWidthDrawEnd = _currentWorldX + _offsetWidth;
+            _worldHeightDrawEnd = _currentWorldY + _offsetHeight;
 
-            _worldWidthDrawEnd = (_currentWorldX + _offsetWidth + (int)Math.Truncate(_halfSizeWidth)) % _worldWidth;
-            _worldHeightDrawEnd = (_currentWorldY + _offsetHeight + (int)Math.Truncate(_halfSizeHeight)) % _worldHeight;
-
+            if (update)
+            {
+                // запоминаем перестроенные координаты
+                _currentWorldX = _offsetWorldX;
+                _currentWorldY = _offsetWorldY;
+            }
+            
             //_worldHeightDrawBegin = _currentZoomX > _worldHeight ? 0 : _worldHeightDrawBegin;
             //_worldWidthDrawBegin = _currentZoomY > _worldWidth ? 0 : _worldWidthDrawBegin;
 

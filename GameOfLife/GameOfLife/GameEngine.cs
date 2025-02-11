@@ -68,11 +68,11 @@ namespace GameOfLife
             #endregion
         }
 
-        public void ResizeWorld(int rows, int cols)
+        public void ResizeWorld(Point2D worldSize)
         {
-            this.Rows = rows;
-            this.Cols = cols;
-            CurrentWorldState = new bool[cols, rows];
+            this.Rows = (int)worldSize.Y;
+            this.Cols = (int)worldSize.X;
+            CurrentWorldState = new bool[this.Cols, this.Rows];
         }
 
         public void FillRandom(int density)

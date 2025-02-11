@@ -95,6 +95,7 @@
             this.GridCheckBox.TabIndex = 13;
             this.GridCheckBox.Text = "Grid";
             this.GridCheckBox.UseVisualStyleBackColor = true;
+            this.GridCheckBox.CheckedChanged += new System.EventHandler(this.GridCheckBox_CheckedChanged);
             // 
             // WorldWidthNumericUpDown
             // 
@@ -271,6 +272,7 @@
             this.pictureBox.TabIndex = 0;
             this.pictureBox.TabStop = false;
             this.pictureBox.SizeChanged += new System.EventHandler(this.pictureBox_SizeChanged);
+            this.pictureBox.MouseClick += new System.Windows.Forms.MouseEventHandler(this.pictureBox_MouseClick);
             this.pictureBox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pictureBox_MouseMove);
             // 
             // timer

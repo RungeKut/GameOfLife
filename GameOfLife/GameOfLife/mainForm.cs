@@ -16,44 +16,87 @@ namespace GameOfLife
         /// Вертикальный размер мира
         /// </summary>
         private int _worldHeight { get; set; }
+        /// <summary>
+        /// Объект рисования графики
+        /// </summary>
         private Graphics _graphics { get; set; }
+        /// <summary>
+        /// Объект мира
+        /// </summary>
         private GameEngine _gameEngine { get; set; }
+        /// <summary>
+        /// Предыдущий размер виндовс-формы
+        /// </summary>
         private Size _prvSize { get; set; }
+        /// <summary>
+        /// Горизонтальная мировая координата мыши
+        /// </summary>
         private int _offsetWorldX { get; set; }
+        /// <summary>
+        /// Вертикальная мировая координата мыши
+        /// </summary>
         private int _offsetWorldY { get; set; }
+        /// <summary>
+        /// Текущая горизонтальная координата центра окна в мире (в клетках)
+        /// </summary>
         private int _currentWorldX { get; set; }
+        /// <summary>
+        /// Текущая вертикальная координата центра окна в мире (в клетках)
+        /// </summary>
         private int _currentWorldY { get; set; }
+        /// <summary>
+        /// Горизонтальная мировая координата начала отрисовки окна (в клетках)
+        /// </summary>
         private int _worldHeightDrawBegin { get; set; }
-        private int _worldHeightDrawEnd { get; set; }
+        /// <summary>
+        /// Вертикальная мировая координата начала отрисовки окна (в клетках)
+        /// </summary>
         private int _worldWidthDrawBegin { get; set; }
-        private int _worldWidthDrawEnd { get; set; }
+        /// <summary>
+        /// Горизонтальное смещение курсора мыши отностительно центра окна (в клетках)
+        /// </summary>
         private int _offsetWidth { get; set; }
+        /// <summary>
+        /// Вертикальное смещение курсора мыши отностительно центра окна (в клетках)
+        /// </summary>
         private int _offsetHeight { get; set; }
+        /// <summary>
+        /// Горизонтальный размер половины мира (в клетках) точный
+        /// </summary>
         private float _halfSizeWidth { get; set; }
+        /// <summary>
+        /// Вертикальный размер половины мира (в клетках) точный
+        /// </summary>
         private float _halfSizeHeight { get; set; }
+        /// <summary>
+        /// Горизонтальный размер части клеток, которые уходят за пределы окна слева и справа (в пикселях)
+        /// </summary>
         private float _halfSizeAbroadCellWidth { get; set; }
+        /// <summary>
+        /// Вертикальный размер части клеток, которые уходят за пределы окна сверху и снизу (в пикселях)
+        /// </summary>
         private float _halfSizeAbroadCellHeight { get; set; }
+        /// <summary>
+        /// Горизонтальный размер окна (в клетках) зависит от масштаба
+        /// </summary>
         private int _windowSizeWidth { get; set; }
+        /// <summary>
+        /// Вертикальный размер окна (в клетках) зависит от масштаба
+        /// </summary>
         private int _windowSizeHeight { get; set; }
         /// <summary>
         /// Количество клеток, убираемое с каждой меньшей стороны (с большей стороны - сколько получится)
         /// </summary>
         private int _zoomCount { get; set; }
         /// <summary>
-        /// Минимальное количество клеток, остающееся по меньшей стороне при максимальном увеличении
+        /// Максимальный размер клетки (в пикселях)
         /// </summary>
         private const int ZOOM_MAX = 64;
-        /// <summary>
-        /// Отношение ширины изображения к высоте
-        /// </summary>
-        private float _pictureAspectRatio { get; set; }
 
         public mainForm()
         {
             InitializeComponent();
-            _zoomCount = 1;
             _gameEngine = new GameEngine();
-            _pictureAspectRatio = (float)pictureBox.Width / (float)pictureBox.Height;
             pictureBox.Image = new Bitmap(pictureBox.Width, pictureBox.Height);
             _graphics = Graphics.FromImage(pictureBox.Image);
             _worldHeight = (int)WorldHeightNumericUpDown.Value;
@@ -64,6 +107,7 @@ namespace GameOfLife
             pictureBox.MouseWheel += PictureBox_MouseWheel;
             CalculatingSize();
             UpdateFormTitle();
+            CalculatingDrawBegin();
         }
 
         #region Отрисовка PictureBox
@@ -113,14 +157,14 @@ namespace GameOfLife
                 int _tempX = x * _zoomCount + (int)(_halfSizeAbroadCellWidth * _zoomCount);
                 int _worldX;
                 if (x + _worldWidthDrawBegin >= 0) _worldX = (x + _worldWidthDrawBegin) % _worldWidth;
-                else _worldX = _worldWidth + (x + _worldWidthDrawBegin) % _worldWidth;
+                else _worldX = (_worldWidth + x + _worldWidthDrawBegin) % _worldWidth;
 
                 for (int y = -1; y < _windowSizeHeight + 1; y++)
                 {
                     int _tempY = y * _zoomCount + (int)(_halfSizeAbroadCellHeight * _zoomCount);
                     int _worldY;
                     if (y + _worldHeightDrawBegin >= 0) _worldY = (y + _worldHeightDrawBegin) % _worldHeight;
-                    else _worldY = _worldHeight + (y + _worldHeightDrawBegin) % _worldHeight;
+                    else _worldY = (_worldHeight + y + _worldHeightDrawBegin) % _worldHeight;
 
                     if (_field[_worldX, _worldY])
                     {
@@ -143,12 +187,10 @@ namespace GameOfLife
 
         private void ResizePictureBox()
         {
-            _pictureAspectRatio = (float)pictureBox.Width / (float)pictureBox.Height;
             pictureBox.Image.Dispose();
             pictureBox.Image = new Bitmap(pictureBox.Width, pictureBox.Height);
             _graphics.Dispose();
             _graphics = Graphics.FromImage(pictureBox.Image);
-            DrawCurrentGeneration();
         }
 
         private void CalculatingScale(MouseEventArgs e)
@@ -189,8 +231,6 @@ namespace GameOfLife
             _zoomCount = 1;
             _worldWidthDrawBegin = 0;
             _worldHeightDrawBegin = 0;
-            _worldWidthDrawEnd = _worldWidth > pictureBox.Width ? pictureBox.Width : _worldWidth;
-            _worldHeightDrawEnd = _worldHeight > pictureBox.Height ? pictureBox.Height : _worldHeight;
             _currentWorldX = _worldWidth / 2;
             _currentWorldY = _worldHeight / 2;
         }
@@ -219,12 +259,15 @@ namespace GameOfLife
 
                 CalculatingScale(e);
                 CalculatingSize();
-
-                _worldWidthDrawBegin = (_currentWorldX - (int)Math.Truncate(_halfSizeWidth)) % _worldWidth;
-                _worldHeightDrawBegin = (_currentWorldY - (int)Math.Truncate(_halfSizeHeight)) % _worldHeight;
-
+                CalculatingDrawBegin();
                 DrawCurrentGeneration();
             }
+
+        }
+        private void CalculatingDrawBegin()
+        {
+            _worldWidthDrawBegin = (_currentWorldX - (int)Math.Truncate(_halfSizeWidth)) % _worldWidth;
+            _worldHeightDrawBegin = (_currentWorldY - (int)Math.Truncate(_halfSizeHeight)) % _worldHeight;
         }
         #endregion
 
@@ -327,6 +370,9 @@ namespace GameOfLife
         {
             if (this.Size == _prvSize) return;
             ResizePictureBox();
+            CalculatingSize();
+            CalculatingDrawBegin();
+            DrawCurrentGeneration();
             _prvSize = this.Size;
         }
 
@@ -350,6 +396,14 @@ namespace GameOfLife
         private void nudDensity_ValueChanged(object sender, EventArgs e)
         {
             _gameEngine.FillRandom((int)nudDensity.Minimum + (int)nudDensity.Maximum - (int)nudDensity.Value);
+            DrawCurrentGeneration();
+        }
+
+        private void pictureBox_SizeChanged(object sender, EventArgs e)
+        {
+            ResizePictureBox();
+            CalculatingSize();
+            CalculatingDrawBegin();
             DrawCurrentGeneration();
         }
         #endregion

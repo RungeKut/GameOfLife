@@ -270,6 +270,7 @@
             this.pictureBox.Size = new System.Drawing.Size(853, 483);
             this.pictureBox.TabIndex = 0;
             this.pictureBox.TabStop = false;
+            this.pictureBox.SizeChanged += new System.EventHandler(this.pictureBox_SizeChanged);
             this.pictureBox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pictureBox_MouseMove);
             // 
             // timer

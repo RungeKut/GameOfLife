@@ -48,6 +48,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DesktopDCRenderer.cs" />
     <Compile Include="Point2D.cs" />
     <Compile Include="StatusEngine.cs" />
     <Compile Include="mainForm.cs">
@@ -59,6 +60,8 @@
     <Compile Include="GameEngine.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TrayManager.cs" />
+    <Compile Include="WallpaperHelper.cs" />
     <EmbeddedResource Include="mainForm.resx">
       <DependentUpon>mainForm.cs</DependentUpon>
     </EmbeddedResource>

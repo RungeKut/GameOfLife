@@ -97,15 +97,21 @@ namespace GameOfLife
                     var genome = GenomeEnabled ? CellGenomes[x, y] : null;
                     var env = EnvironmentEnabled ? WorldEnvironment[x, y] : null;
 
+                    // ✅ Модификатор выживаемости от среды
                     float survivalModifier = env?.GetSurvivalModifier(genome) ?? 1.0f;
 
+                    // ✅ Правила жизни с учётом генома
                     byte birthThreshold = genome?.BirthThreshold ?? 3;
                     byte survivalMin = genome?.SurvivalMin ?? 2;
                     byte survivalMax = genome?.SurvivalMax ?? 3;
 
                     if (!hasLife && neighboursCount == birthThreshold)
                     {
+                        // Рождение новой клетки
                         newField[x, y] = true;
+
+                        // ✅ Среда: клетка родилась
+                        env?.OnCellBirth();
 
                         if (GenomeEnabled)
                         {
@@ -118,15 +124,32 @@ namespace GameOfLife
                     }
                     else if (hasLife && neighboursCount >= survivalMin && neighboursCount <= survivalMax)
                     {
+                        // Выживание с учётом среды
                         if (rand.NextFloat() < survivalModifier)
                         {
                             newField[x, y] = true;
                             if (GenomeEnabled)
                                 newGenomes[x, y] = genome;
-                        }
 
-                        if (EnvironmentEnabled && genome != null)
-                            env?.ConsumeEnergy(genome.Metabolism);
+                            // ✅ Среда: клетка выжила
+                            if (genome != null)
+                            {
+                                env?.OnCellSurvival(genome.Metabolism);
+                                env?.OnHighMetabolism(genome.Metabolism);
+                            }
+                        }
+                        else
+                        {
+                            // ✅ Среда: клетка умерла
+                            env?.OnCellDeath();
+                            newField[x, y] = false;
+                        }
+                    }
+                    else if (hasLife)
+                    {
+                        // ✅ Среда: клетка умерла (перенаселение/голод)
+                        env?.OnCellDeath();
+                        newField[x, y] = false;
                     }
                     else
                     {
@@ -139,6 +162,7 @@ namespace GameOfLife
             if (GenomeEnabled)
                 CellGenomes = newGenomes;
 
+            // ✅ Регенерация среды
             if (EnvironmentEnabled)
             {
                 for (int x = 0; x < Cols; x++)

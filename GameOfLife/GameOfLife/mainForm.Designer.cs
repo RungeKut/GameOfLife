@@ -49,6 +49,7 @@
             this.timer = new System.Windows.Forms.Timer(this.components);
             this.MutationRateNumeric = new System.Windows.Forms.NumericUpDown();
             this.MutationRateLabel = new System.Windows.Forms.Label();
+            this.ShowToxicityCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -74,6 +75,7 @@
             // 
             this.splitContainer1.Panel1.Controls.Add(this.MutationRateNumeric);
             this.splitContainer1.Panel1.Controls.Add(this.EnvironmentCheckBox);
+            this.splitContainer1.Panel1.Controls.Add(this.ShowToxicityCheckBox);
             this.splitContainer1.Panel1.Controls.Add(this.GenomeCheckBox);
             this.splitContainer1.Panel1.Controls.Add(this.GridCheckBox);
             this.splitContainer1.Panel1.Controls.Add(this.WorldWidthNumericUpDown);
@@ -341,6 +343,17 @@
             this.MutationRateLabel.TabIndex = 4;
             this.MutationRateLabel.Text = "Шанс мутации (%):";
             // 
+            // ShowToxicityCheckBox
+            // 
+            this.ShowToxicityCheckBox.AutoSize = true;
+            this.ShowToxicityCheckBox.Location = new System.Drawing.Point(4, 389);
+            this.ShowToxicityCheckBox.Name = "ShowToxicityCheckBox";
+            this.ShowToxicityCheckBox.Size = new System.Drawing.Size(141, 17);
+            this.ShowToxicityCheckBox.TabIndex = 15;
+            this.ShowToxicityCheckBox.Text = "Показать токсичность";
+            this.ShowToxicityCheckBox.UseVisualStyleBackColor = true;
+            this.ShowToxicityCheckBox.CheckedChanged += new System.EventHandler(this.ShowToxicityCheckBox_CheckedChanged);
+            // 
             // mainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -390,6 +403,7 @@
         private System.Windows.Forms.CheckBox GenomeCheckBox;
         private System.Windows.Forms.NumericUpDown MutationRateNumeric;
         private System.Windows.Forms.Label MutationRateLabel;
+        private System.Windows.Forms.CheckBox ShowToxicityCheckBox;
     }
 }
 

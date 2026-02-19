@@ -217,6 +217,38 @@ namespace GameOfLife
                     }
                 }
             }
+
+            // В DrawCells, после отрисовки клеток:
+            if (EnvironmentCheckBox.Checked && !_isWallpaperMode)
+            {
+                // Полупрозрачный слой среды
+                for (int x = -1; x < windowSizeWidth + 1; x++)
+                {
+                    int _tempX = x * _zoomCount + (int)(halfSizeAbroadCellWidth * _zoomCount);
+                    int globalX = x + _worldWidthDrawBegin + offsetX;
+                    int _worldX = ((globalX % (int)_worldSize.X) + (int)_worldSize.X) % (int)_worldSize.X;
+
+                    for (int y = -1; y < windowSizeHeight + 1; y++)
+                    {
+                        int _tempY = y * _zoomCount + (int)(halfSizeAbroadCellHeight * _zoomCount);
+                        int globalY = y + _worldHeightDrawBegin + offsetY;
+                        int _worldY = ((globalY % (int)_worldSize.Y) + (int)_worldSize.Y) % (int)_worldSize.Y;
+
+                        if (_worldX >= 0 && _worldX < _gameEngine.Cols &&
+                            _worldY >= 0 && _worldY < _gameEngine.Rows)
+                        {
+                            var env = _gameEngine.GetCellEnvironment(_worldX, _worldY);
+                            if (env != null && env.Toxicity > 3) // Показываем только токсичные зоны
+                            {
+                                using (Brush brush = new SolidBrush(Color.FromArgb(30, Color.Red)))
+                                {
+                                    g.FillRectangle(brush, _tempX, _tempY, _zoomCount, _zoomCount);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         private float Truncate(float a) { return a - (float)Math.Truncate(a); }
@@ -707,13 +739,18 @@ namespace GameOfLife
         {
             _gameEngine.EnvironmentEnabled = EnvironmentCheckBox.Checked;
             _trayManager.ShowBalloonTip("Среда",
-                EnvironmentCheckBox.Checked ? "Среда включена" : "Среда выключена",
+                EnvironmentCheckBox.Checked ? "Динамическая среда включена" : "Среда отключена",
                 ToolTipIcon.Info, 1000);
         }
 
         private void MutationRateNumeric_ValueChanged(object sender, EventArgs e)
         {
             _gameEngine.MutationRate = (float)MutationRateNumeric.Value / 100.0f;
+        }
+
+        private void ShowToxicityCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            DrawCurrentGeneration();
         }
     }
 }

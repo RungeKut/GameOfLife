@@ -739,5 +739,15 @@ namespace GameOfLife
         {
             DrawCurrentGeneration();
         }
+
+        private void ParallelCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            _gameEngine.ParallelProcessing = ParallelCheckBox.Checked;
+            _trayManager.ShowBalloonTip("Параллелизм",
+                ParallelCheckBox.Checked ?
+                    $"Включено ({System.Environment.ProcessorCount} ядер)" :
+                    "Выключено (последовательно)",
+                ToolTipIcon.Info, 1000);
+        }
     }
 }

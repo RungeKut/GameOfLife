@@ -50,6 +50,7 @@
             this.MutationRateNumeric = new System.Windows.Forms.NumericUpDown();
             this.MutationRateLabel = new System.Windows.Forms.Label();
             this.ShowToxicityCheckBox = new System.Windows.Forms.CheckBox();
+            this.ParallelCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -75,6 +76,7 @@
             // 
             this.splitContainer1.Panel1.Controls.Add(this.MutationRateNumeric);
             this.splitContainer1.Panel1.Controls.Add(this.EnvironmentCheckBox);
+            this.splitContainer1.Panel1.Controls.Add(this.ParallelCheckBox);
             this.splitContainer1.Panel1.Controls.Add(this.ShowToxicityCheckBox);
             this.splitContainer1.Panel1.Controls.Add(this.GenomeCheckBox);
             this.splitContainer1.Panel1.Controls.Add(this.GridCheckBox);
@@ -354,6 +356,19 @@
             this.ShowToxicityCheckBox.UseVisualStyleBackColor = true;
             this.ShowToxicityCheckBox.CheckedChanged += new System.EventHandler(this.ShowToxicityCheckBox_CheckedChanged);
             // 
+            // ParallelCheckBox
+            // 
+            this.ParallelCheckBox.AutoSize = true;
+            this.ParallelCheckBox.Checked = true;
+            this.ParallelCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.ParallelCheckBox.Location = new System.Drawing.Point(4, 403);
+            this.ParallelCheckBox.Name = "ParallelCheckBox";
+            this.ParallelCheckBox.Size = new System.Drawing.Size(166, 17);
+            this.ParallelCheckBox.TabIndex = 15;
+            this.ParallelCheckBox.Text = "Параллельные вычисления";
+            this.ParallelCheckBox.UseVisualStyleBackColor = true;
+            this.ParallelCheckBox.CheckedChanged += new System.EventHandler(this.ParallelCheckBox_CheckedChanged);
+            // 
             // mainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -404,6 +419,7 @@
         private System.Windows.Forms.NumericUpDown MutationRateNumeric;
         private System.Windows.Forms.Label MutationRateLabel;
         private System.Windows.Forms.CheckBox ShowToxicityCheckBox;
+        private System.Windows.Forms.CheckBox ParallelCheckBox;
     }
 }
 

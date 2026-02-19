@@ -9,12 +9,12 @@ namespace GameOfLife
         private NotifyIcon _notifyIcon;
         private ContextMenuStrip _contextMenu;
         private mainForm _mainForm;
-
         private ToolStripMenuItem _startPauseMenuItem;
         private ToolStripMenuItem _stopMenuItem;
         private ToolStripMenuItem _randomMenuItem;
         private ToolStripMenuItem _wallpaperMenuItem;
         private ToolStripMenuItem _settingsMenuItem;
+        private ToolStripMenuItem _zoomMenuItem;
         private ToolStripMenuItem _exitMenuItem;
 
         public TrayManager(mainForm form)
@@ -27,9 +27,8 @@ namespace GameOfLife
         {
             _contextMenu = new ContextMenuStrip();
 
-            // ✅ ИСПРАВЛЕНО: Используем Keys.None вместо Keys.Space
             _startPauseMenuItem = new ToolStripMenuItem("Старт/Пауза", null, OnStartPauseClick);
-            _startPauseMenuItem.ShortcutKeys = Keys.None; // Было: Keys.Space
+            _startPauseMenuItem.ShortcutKeys = Keys.None;
             _contextMenu.Items.Add(_startPauseMenuItem);
 
             _stopMenuItem = new ToolStripMenuItem("Стоп/Сброс", null, OnStopClick);
@@ -41,17 +40,29 @@ namespace GameOfLife
             mouseDrawingMenuItem.Checked = true;
             _contextMenu.Items.Add(mouseDrawingMenuItem);
 
-            // ✅ F5 - допустимая клавиша
             _randomMenuItem = new ToolStripMenuItem("Случайная генерация", null, OnRandomClick);
             _randomMenuItem.ShortcutKeys = Keys.F5;
             _contextMenu.Items.Add(_randomMenuItem);
 
             _contextMenu.Items.Add(new ToolStripSeparator());
 
-            // ✅ F12 - допустимая клавиша
             _wallpaperMenuItem = new ToolStripMenuItem("Режим обоев", null, OnWallpaperClick);
             _wallpaperMenuItem.ShortcutKeys = Keys.F12;
             _contextMenu.Items.Add(_wallpaperMenuItem);
+
+            _contextMenu.Items.Add(new ToolStripSeparator());
+
+            // Меню зума
+            _zoomMenuItem = new ToolStripMenuItem("Зум");
+            _contextMenu.Items.Add(_zoomMenuItem);
+
+            int[] zoomLevels = { 1, 2, 4, 8, 16, 32, 64 };
+            foreach (int zoom in zoomLevels)
+            {
+                var zoomItem = new ToolStripMenuItem(zoom + "x", null, OnZoomClick);
+                zoomItem.Tag = zoom;
+                _zoomMenuItem.DropDownItems.Add(zoomItem);
+            }
 
             _contextMenu.Items.Add(new ToolStripSeparator());
 
@@ -60,7 +71,6 @@ namespace GameOfLife
 
             _contextMenu.Items.Add(new ToolStripSeparator());
 
-            // ✅ Alt+F4 - допустимая комбинация
             _exitMenuItem = new ToolStripMenuItem("Выход", null, OnExitClick);
             _exitMenuItem.ShortcutKeys = Keys.Alt | Keys.F4;
             _contextMenu.Items.Add(_exitMenuItem);
@@ -121,6 +131,15 @@ namespace GameOfLife
             UpdateMenuState();
         }
 
+        private void OnZoomClick(object sender, EventArgs e)
+        {
+            if (sender is ToolStripMenuItem item && item.Tag is int zoomLevel)
+            {
+                _mainForm.SetZoomLevel(zoomLevel);
+                UpdateMenuState();
+            }
+        }
+
         private void OnSettingsClick(object sender, EventArgs e)
         {
             _mainForm.ToggleControlPanel();
@@ -133,7 +152,6 @@ namespace GameOfLife
 
         public void UpdateMenuState()
         {
-            // ✅ ИСПРАВЛЕНО: Добавлен public метод для доступа к _gameEngine
             var engine = _mainForm.GetGameEngine();
             if (engine == null) return;
 
@@ -154,6 +172,16 @@ namespace GameOfLife
             _wallpaperMenuItem.Checked = _mainForm.IsWallpaperMode;
 
             _settingsMenuItem.Text = _mainForm.IsControlPanelVisible ? "Скрыть панель управления" : "Показать панель управления";
+
+            // Обновляем состояние меню зума
+            int currentZoom = _mainForm.GetCurrentZoom();
+            foreach (ToolStripMenuItem zoomItem in _zoomMenuItem.DropDownItems)
+            {
+                if (zoomItem.Tag is int zoomLevel)
+                {
+                    zoomItem.Checked = (zoomLevel == currentZoom);
+                }
+            }
         }
 
         public void SetIcon(Icon icon)
@@ -164,9 +192,14 @@ namespace GameOfLife
             }
         }
 
-        public void ShowBalloonTip(string title, string message, ToolTipIcon icon = ToolTipIcon.Info, int timeout = 2000)
+        public void ShowBalloonTip(string title, string message, ToolTipIcon icon, int timeout)
         {
             _notifyIcon.ShowBalloonTip(timeout, title, message, icon);
+        }
+
+        public void ShowBalloonTip(string title, string message, ToolTipIcon icon = ToolTipIcon.Info)
+        {
+            _notifyIcon.ShowBalloonTip(2000, title, message, icon);
         }
 
         public void Dispose()

@@ -219,7 +219,7 @@ namespace GameOfLife
         {
             if (!_isWallpaperMode)
             {
-                this.Text = $"Generation:{_gameEngine.CurrentGeneration} Zoom:{_zoomCount} World:{(int)_worldSize.X}x{(int)_worldSize.Y} Monitors:{_monitors.Count}";
+                this.Text = "Generation:" + _gameEngine.CurrentGeneration + " Zoom:" + _zoomCount + "x World:" + (int)_worldSize.X + "x" + (int)_worldSize.Y + " Monitors:" + _monitors.Count;
             }
         }
 
@@ -504,49 +504,41 @@ namespace GameOfLife
         public bool IsWallpaperMode => _isWallpaperMode;
         public bool IsControlPanelVisible => _isControlPanelVisible;
 
-        // === ИСПРАВЛЕННЫЙ МЕТОД: Поддержка всех мониторов с учётом их расположения ===
         private void EnableWallpaperMode()
         {
             _isWallpaperMode = true;
 
-            // ✅ Обновляем информацию о мониторах (могли измениться)
             _monitors = VirtualDesktop.GetMonitors();
 
-            // ✅ Пересчитываем размер мира
-            _worldSize = VirtualDesktop.GetWorldSize(_monitors, _cellSize);
+            // Учитываем зум при расчёте размера мира
+            _worldSize = VirtualDesktop.GetWorldSize(_monitors, _cellSize * _zoomCount);
             _gameEngine.ResizeWorld(_worldSize);
 
-            // ✅ Скрываем основную форму
             this.Hide();
 
-            // ✅ Создаём форму для каждого монитора
             _wallpaperForms.Clear();
             foreach (MonitorInfo monitor in _monitors)
             {
-                var wpForm = new WallpaperForm(_gameEngine, monitor, _cellSize, _worldSize);
+                var wpForm = new WallpaperForm(_gameEngine, monitor, _cellSize * _zoomCount, _worldSize);
                 wpForm.InitializeBitmap();
                 _wallpaperForms.Add(wpForm);
             }
 
-            // ✅ Генерируем начальное состояние
             _gameEngine.FillRandom(50);
 
-            // ✅ Показываем все формы
             foreach (var wpForm in _wallpaperForms)
             {
                 wpForm.ShowWallpaper();
             }
 
-            // ✅ Первая отрисовка
             DrawToAllWallpapers();
             System.Threading.Thread.Sleep(300);
 
-            // ✅ Запускаем симуляцию
             if (_gameEngine._statusEngine == StatusEngine.stop)
                 StartGame();
 
             _trayManager.ShowBalloonTip("Режим обоев",
-                $"Приложение работает на {_monitors.Count} мониторе(ах). Мир: {(int)_worldSize.X}x{(int)_worldSize.Y} клеток.",
+                "Приложение работает на " + _monitors.Count + " мониторе(ах). Мир: " + (int)_worldSize.X + "x" + (int)_worldSize.Y + " клеток. Зум: " + _zoomCount + "x",
                 ToolTipIcon.Info, 2000);
         }
 
@@ -608,6 +600,53 @@ namespace GameOfLife
             _allowMouseDrawing = !_allowMouseDrawing;
             _trayManager.ShowBalloonTip("Рисование мышью",
                 _allowMouseDrawing ? "Включено: клики рисуют клетки" : "Выключено: клики проходят сквозь обои",
+                ToolTipIcon.Info, 1000);
+        }
+
+        // === МЕТОДЫ ДЛЯ УПРАВЛЕНИЯ ЗУМОМ ===
+
+        public int GetCurrentZoom()
+        {
+            return _zoomCount;
+        }
+
+        public void SetZoomLevel(int zoomLevel)
+        {
+            if (zoomLevel < 1 || zoomLevel > ZOOM_MAX)
+                return;
+
+            int centerX = _currentWorldX;
+            int centerY = _currentWorldY;
+
+            int oldWorldWidth = (int)_worldSize.X;
+            int oldWorldHeight = (int)_worldSize.Y;
+
+            _zoomCount = zoomLevel;
+
+            _monitors = VirtualDesktop.GetMonitors();
+            _worldSize = VirtualDesktop.GetWorldSize(_monitors, _cellSize * _zoomCount);
+
+            _currentWorldX = (int)((centerX * _worldSize.X) / oldWorldWidth);
+            _currentWorldY = (int)((centerY * _worldSize.Y) / oldWorldHeight);
+
+            _gameEngine.ResizeWorld(_worldSize);
+
+            CalculatingSize();
+            CalculatingDrawBegin();
+
+            if (_isWallpaperMode)
+            {
+                DrawToAllWallpapers();
+            }
+            else
+            {
+                DrawToPictureBox();
+            }
+
+            UpdateFormTitle();
+
+            _trayManager.ShowBalloonTip("Зум изменён",
+                "Зум: " + _zoomCount + "x, Мир: " + (int)_worldSize.X + "x" + (int)_worldSize.Y + " клеток",
                 ToolTipIcon.Info, 1000);
         }
 

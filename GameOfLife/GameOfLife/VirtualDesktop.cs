@@ -72,6 +72,8 @@ namespace GameOfLife
 
         public static Point2D GetWorldSize(List<MonitorInfo> monitors, int cellSize = 1)
         {
+            // ✅ cellSize теперь включает множитель зума
+            // Если cellSize = 1 * zoomCount, то размер мира уменьшится в zoomCount раз
             int totalWidth = GetTotalWidth(monitors) / cellSize;
             int totalHeight = GetTotalHeight(monitors) / cellSize;
             return new Point2D(totalWidth, totalHeight);

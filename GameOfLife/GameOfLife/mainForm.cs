@@ -166,6 +166,7 @@ namespace GameOfLife
             float halfSizeAbroadCellWidth = Truncate((float)width / _zoomCount) / 2;
             float halfSizeAbroadCellHeight = Truncate((float)height / _zoomCount) / 2;
 
+            // Сетка
             if (GridCheckBox.Checked && !_isWallpaperMode)
             {
                 using (Pen _style = new Pen(Color.DarkGray, 1))
@@ -183,6 +184,7 @@ namespace GameOfLife
                 }
             }
 
+            // Клетки
             for (int x = -1; x < windowSizeWidth + 1; x++)
             {
                 int _tempX = x * _zoomCount + (int)(halfSizeAbroadCellWidth * _zoomCount);
@@ -200,11 +202,28 @@ namespace GameOfLife
                     {
                         if (_field[_worldX, _worldY])
                         {
-                            // Получаем цвет на основе генома
+                            // ✅ Получаем цвет на основе генома и типа клетки
                             Color cellColor = Color.Crimson;
                             var genome = _gameEngine.GetCellGenome(_worldX, _worldY);
                             if (genome != null)
                                 cellColor = genome.GenomeColor;
+
+                            // ✅ Рисуем индикатор энергии для крупных клеток
+                            if (_zoomCount > 4 && genome != null)
+                            {
+                                int energy = _gameEngine.GetCellEnergy(_worldX, _worldY);
+                                int maxEnergy = genome.MaxEnergy * 10;
+                                float energyRatio = (float)energy / maxEnergy;
+
+                                // Тёмная обводка для низкой энергии
+                                if (energyRatio < 0.3f)
+                                {
+                                    using (Pen pen = new Pen(Color.Red, 2))
+                                    {
+                                        g.DrawRectangle(pen, _tempX, _tempY, _zoomCount - 1, _zoomCount - 1);
+                                    }
+                                }
+                            }
 
                             using (Brush brush = new SolidBrush(cellColor))
                             {
@@ -212,38 +231,6 @@ namespace GameOfLife
                                     g.FillRectangle(brush, _tempX + 1, _tempY + 1, _zoomCount - 1, _zoomCount - 1);
                                 else
                                     g.FillRectangle(brush, _tempX, _tempY, 1, 1);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // В DrawCells, после отрисовки клеток:
-            if (EnvironmentCheckBox.Checked && !_isWallpaperMode)
-            {
-                // Полупрозрачный слой среды
-                for (int x = -1; x < windowSizeWidth + 1; x++)
-                {
-                    int _tempX = x * _zoomCount + (int)(halfSizeAbroadCellWidth * _zoomCount);
-                    int globalX = x + _worldWidthDrawBegin + offsetX;
-                    int _worldX = ((globalX % (int)_worldSize.X) + (int)_worldSize.X) % (int)_worldSize.X;
-
-                    for (int y = -1; y < windowSizeHeight + 1; y++)
-                    {
-                        int _tempY = y * _zoomCount + (int)(halfSizeAbroadCellHeight * _zoomCount);
-                        int globalY = y + _worldHeightDrawBegin + offsetY;
-                        int _worldY = ((globalY % (int)_worldSize.Y) + (int)_worldSize.Y) % (int)_worldSize.Y;
-
-                        if (_worldX >= 0 && _worldX < _gameEngine.Cols &&
-                            _worldY >= 0 && _worldY < _gameEngine.Rows)
-                        {
-                            var env = _gameEngine.GetCellEnvironment(_worldX, _worldY);
-                            if (env != null && env.Toxicity > 3) // Показываем только токсичные зоны
-                            {
-                                using (Brush brush = new SolidBrush(Color.FromArgb(30, Color.Red)))
-                                {
-                                    g.FillRectangle(brush, _tempX, _tempY, _zoomCount, _zoomCount);
-                                }
                             }
                         }
                     }

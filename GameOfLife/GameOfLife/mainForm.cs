@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Collections.Generic;
 
 namespace GameOfLife
 {
@@ -34,9 +35,10 @@ namespace GameOfLife
         private Control[] _controlPanelControls { get; set; }
         private MenuStrip _mainMenu { get; set; }
 
-        // === НОВОЕ: Bitmap для быстрой отрисовки в режиме обоев ===
-        private Bitmap _wallpaperBitmap { get; set; }
-        private Graphics _wallpaperGraphics { get; set; }
+        // === НОВОЕ: Виртуальный рабочий стол ===
+        private List<MonitorInfo> _monitors { get; set; }
+        private List<WallpaperForm> _wallpaperForms = new List<WallpaperForm>();
+        private int _cellSize = 1; // Размер клетки в пикселях
 
         public GameEngine GetGameEngine() => _gameEngine;
 
@@ -44,23 +46,22 @@ namespace GameOfLife
         {
             InitializeComponent();
 
-            // ✅ КРИТИЧНО: Включаем двойную буферизацию для устранения мерцания
-            this.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
-            this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
-            this.SetStyle(ControlStyles.UserPaint, true);
-            this.DoubleBuffered = true;
-
-            this.BackColor = Color.Black;
-            pictureBox.BackColor = Color.Black;
-            pictureBox.Dock = DockStyle.Fill;
             pictureBox.Visible = true;
+            pictureBox.Dock = DockStyle.Fill;
+            pictureBox.BackColor = Color.Black;
 
             SaveControlPanelReferences();
+
+            // ✅ Инициализируем виртуальный рабочий стол
+            _monitors = VirtualDesktop.GetMonitors();
+
+            // ✅ Авто-расчёт размера мира по всем мониторам
+            _worldSize = VirtualDesktop.GetWorldSize(_monitors, _cellSize);
 
             _gameEngine = new GameEngine();
             pictureBox.Image = new Bitmap(pictureBox.Width, pictureBox.Height);
             _graphics = Graphics.FromImage(pictureBox.Image);
-            _worldSize = new Point2D((int)WorldHeightNumericUpDown.Value, (int)WorldWidthNumericUpDown.Value);
+
             _gameEngine.ResizeWorld(_worldSize);
             ResizePictureBox();
             ResetZoom();
@@ -82,7 +83,7 @@ namespace GameOfLife
             catch { }
 
             _trayManager.ShowBalloonTip("Game of Life",
-                "Приложение запущено. Нажмите правой кнопкой на иконку в трее для управления.",
+                $"Приложение запущено. Обнаружено {_monitors.Count} монитор(а). Используйте иконку в трее для управления.",
                 ToolTipIcon.Info, 3000);
         }
 
@@ -110,31 +111,13 @@ namespace GameOfLife
             _isControlPanelVisible = true;
         }
 
-        // ✅ Переопределяем OnPaint для быстрой отрисовки Bitmap
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            base.OnPaint(e);
-
-            if (_isWallpaperMode && _wallpaperBitmap != null)
-            {
-                // ✅ Копируем готовый Bitmap на экран одним вызовом
-                e.Graphics.DrawImageUnscaled(_wallpaperBitmap, 0, 0);
-            }
-        }
-
-        // ✅ Отключаем стандартную очистку фона
-        protected override void OnPaintBackground(PaintEventArgs e)
-        {
-            // Пусто - рисуем сами в OnPaint
-        }
-
         #region Отрисовка
 
         private void DrawCurrentGeneration()
         {
             if (_isWallpaperMode)
             {
-                DrawToWallpaperBitmap();
+                DrawToAllWallpapers();
             }
             else
             {
@@ -152,7 +135,7 @@ namespace GameOfLife
             try
             {
                 _graphics.Clear(Color.Black);
-                DrawCells(_graphics, pictureBox.Width, pictureBox.Height);
+                DrawCells(_graphics, pictureBox.Width, pictureBox.Height, 0, 0);
             }
             finally
             {
@@ -163,48 +146,26 @@ namespace GameOfLife
             pictureBox.Refresh();
         }
 
-        // ✅ НОВЫЙ МЕТОД: Отрисовка в Bitmap для режима обоев
-        private void DrawToWallpaperBitmap()
+        private void DrawToAllWallpapers()
         {
-            // Создаём Bitmap если нет или размер изменился
-            if (_wallpaperBitmap == null ||
-                _wallpaperBitmap.Width != this.Width ||
-                _wallpaperBitmap.Height != this.Height)
+            foreach (var wpForm in _wallpaperForms)
             {
-                _wallpaperBitmap?.Dispose();
-                _wallpaperGraphics?.Dispose();
-
-                _wallpaperBitmap = new Bitmap(this.Width, this.Height);
-                _wallpaperGraphics = Graphics.FromImage(_wallpaperBitmap);
-
-                // ✅ Включаем сглаживание для скорости
-                _wallpaperGraphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-                _wallpaperGraphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
-                _wallpaperGraphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-                _wallpaperGraphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+                wpForm.DrawGeneration(_zoomCount, _worldWidthDrawBegin, _worldHeightDrawBegin,
+                    _halfSizeAbroadCellWidth, _halfSizeAbroadCellHeight);
             }
-
-            // ✅ Рисуем всё поколение в память
-            _wallpaperGraphics.Clear(Color.Black);
-            DrawCells(_wallpaperGraphics, this.Width, this.Height);
-
-            // ✅ Обновляем форму (копирует Bitmap на экран одним вызовом)
-            this.Invalidate();
         }
 
-        private void DrawCells(Graphics g, int width, int height)
+        private void DrawCells(Graphics g, int width, int height, int offsetX, int offsetY)
         {
             var _field = _gameEngine.GetCurrentGeneration();
             if (_field == null)
                 return;
 
-            // Пересчитываем параметры для текущего размера
             int windowSizeWidth = width / _zoomCount;
             int windowSizeHeight = height / _zoomCount;
             float halfSizeAbroadCellWidth = Truncate((float)width / _zoomCount) / 2;
             float halfSizeAbroadCellHeight = Truncate((float)height / _zoomCount) / 2;
 
-            // Сетка (только не в режиме обоев)
             if (GridCheckBox.Checked && !_isWallpaperMode)
             {
                 using (Pen _style = new Pen(Color.DarkGray, 1))
@@ -222,31 +183,31 @@ namespace GameOfLife
                 }
             }
 
-            // ✅ Клетки - рисуем напрямую в Graphics
             for (int x = -1; x < windowSizeWidth + 1; x++)
             {
                 int _tempX = x * _zoomCount + (int)(halfSizeAbroadCellWidth * _zoomCount);
-                int _worldX;
-                if (x + _worldWidthDrawBegin >= 0)
-                    _worldX = (int)((x + _worldWidthDrawBegin) % _worldSize.X);
-                else
-                    _worldX = (int)((_worldSize.X + x + _worldWidthDrawBegin) % _worldSize.X);
+
+                // Глобальная координата с учётом смещения
+                int globalX = x + _worldWidthDrawBegin + offsetX;
+                int _worldX = ((globalX % (int)_worldSize.X) + (int)_worldSize.X) % (int)_worldSize.X;
 
                 for (int y = -1; y < windowSizeHeight + 1; y++)
                 {
                     int _tempY = y * _zoomCount + (int)(halfSizeAbroadCellHeight * _zoomCount);
-                    int _worldY;
-                    if (y + _worldHeightDrawBegin >= 0)
-                        _worldY = (int)((y + _worldHeightDrawBegin) % _worldSize.Y);
-                    else
-                        _worldY = (int)((_worldSize.Y + y + _worldHeightDrawBegin) % _worldSize.Y);
 
-                    if (_field[_worldX, _worldY])
+                    int globalY = y + _worldHeightDrawBegin + offsetY;
+                    int _worldY = ((globalY % (int)_worldSize.Y) + (int)_worldSize.Y) % (int)_worldSize.Y;
+
+                    if (_worldX >= 0 && _worldX < _field.GetLength(0) &&
+                        _worldY >= 0 && _worldY < _field.GetLength(1))
                     {
-                        if (_zoomCount > 1)
-                            g.FillRectangle(Brushes.Crimson, _tempX + 1, _tempY + 1, _zoomCount - 1, _zoomCount - 1);
-                        else
-                            g.FillRectangle(Brushes.Crimson, _tempX, _tempY, 1, 1);
+                        if (_field[_worldX, _worldY])
+                        {
+                            if (_zoomCount > 1)
+                                g.FillRectangle(Brushes.Crimson, _tempX + 1, _tempY + 1, _zoomCount - 1, _zoomCount - 1);
+                            else
+                                g.FillRectangle(Brushes.Crimson, _tempX, _tempY, 1, 1);
+                        }
                     }
                 }
             }
@@ -258,7 +219,7 @@ namespace GameOfLife
         {
             if (!_isWallpaperMode)
             {
-                this.Text = $"Generation:{_gameEngine.CurrentGeneration} Zoom:{_zoomCount} world_X:{_offsetWorldX} world_Y:{_offsetWorldY}";
+                this.Text = $"Generation:{_gameEngine.CurrentGeneration} Zoom:{_zoomCount} World:{(int)_worldSize.X}x{(int)_worldSize.Y} Monitors:{_monitors.Count}";
             }
         }
 
@@ -543,73 +504,74 @@ namespace GameOfLife
         public bool IsWallpaperMode => _isWallpaperMode;
         public bool IsControlPanelVisible => _isControlPanelVisible;
 
+        // === ИСПРАВЛЕННЫЙ МЕТОД: Поддержка всех мониторов с учётом их расположения ===
         private void EnableWallpaperMode()
         {
             _isWallpaperMode = true;
 
-            this.FormBorderStyle = FormBorderStyle.None;
-            this.WindowState = FormWindowState.Maximized;
-            this.TopMost = false;
-            this.ShowInTaskbar = false;
-            this.ControlBox = false;
+            // ✅ Обновляем информацию о мониторах (могли измениться)
+            _monitors = VirtualDesktop.GetMonitors();
 
-            // ✅ Создаём Bitmap для обоев
-            _wallpaperBitmap = new Bitmap(this.Width, this.Height);
-            _wallpaperGraphics = Graphics.FromImage(_wallpaperBitmap);
+            // ✅ Пересчитываем размер мира
+            _worldSize = VirtualDesktop.GetWorldSize(_monitors, _cellSize);
+            _gameEngine.ResizeWorld(_worldSize);
 
-            // ✅ Оптимизации для скорости
-            _wallpaperGraphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-            _wallpaperGraphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
-            _wallpaperGraphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-            _wallpaperGraphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+            // ✅ Скрываем основную форму
+            this.Hide();
 
-            pictureBox.Visible = false;
+            // ✅ Создаём форму для каждого монитора
+            _wallpaperForms.Clear();
+            foreach (MonitorInfo monitor in _monitors)
+            {
+                var wpForm = new WallpaperForm(_gameEngine, monitor, _cellSize, _worldSize);
+                wpForm.InitializeBitmap();
+                _wallpaperForms.Add(wpForm);
+            }
 
+            // ✅ Генерируем начальное состояние
             _gameEngine.FillRandom(50);
-            DrawToWallpaperBitmap();
 
-            UpdateControlPanelVisibility();
+            // ✅ Показываем все формы
+            foreach (var wpForm in _wallpaperForms)
+            {
+                wpForm.ShowWallpaper();
+            }
 
-            this.Show();
-            Application.DoEvents();
-            System.Threading.Thread.Sleep(200);
+            // ✅ Первая отрисовка
+            DrawToAllWallpapers();
+            System.Threading.Thread.Sleep(300);
 
-            WallpaperHelper.SetAsWallpaper(this);
-
+            // ✅ Запускаем симуляцию
             if (_gameEngine._statusEngine == StatusEngine.stop)
                 StartGame();
 
-            // ✅ Первая отрисовка
-            this.Invalidate();
-            this.Update();
-            Application.DoEvents();
-
             _trayManager.ShowBalloonTip("Режим обоев",
-                "Приложение работает в фоне. Используйте иконку в трее для управления.",
+                $"Приложение работает на {_monitors.Count} мониторе(ах). Мир: {(int)_worldSize.X}x{(int)_worldSize.Y} клеток.",
                 ToolTipIcon.Info, 2000);
         }
 
         private void DisableWallpaperMode()
         {
-            // ✅ Очищаем Bitmap обоев
-            _wallpaperBitmap?.Dispose();
-            _wallpaperGraphics?.Dispose();
-            _wallpaperBitmap = null;
-            _wallpaperGraphics = null;
+            // ✅ Скрываем и очищаем все формы обоев
+            foreach (var wpForm in _wallpaperForms)
+            {
+                wpForm.HideWallpaper();
+                wpForm.DisposeResources();
+            }
+            _wallpaperForms.Clear();
 
-            WallpaperHelper.RestoreToNormal(this);
-
+            // ✅ Показываем основную форму
+            this.Show();
             this.FormBorderStyle = FormBorderStyle.Sizable;
             this.WindowState = FormWindowState.Normal;
-            this.TopMost = false;
             this.ShowInTaskbar = true;
-            this.ControlBox = true;
-
-            pictureBox.Visible = true;
 
             UpdateControlPanelVisibility();
+            pictureBox.Visible = true;
 
             DrawToPictureBox();
+
+            _isWallpaperMode = false;
         }
 
         private void UpdateControlPanelVisibility()
@@ -629,16 +591,34 @@ namespace GameOfLife
 
         private void mainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            _wallpaperBitmap?.Dispose();
-            _wallpaperGraphics?.Dispose();
+            foreach (var wpForm in _wallpaperForms)
+            {
+                wpForm.DisposeResources();
+            }
+            _wallpaperForms.Clear();
+
             _trayManager?.Dispose();
             if (_isWallpaperMode) DisableWallpaperMode();
         }
 
+        private bool _allowMouseDrawing { get; set; } = true;
+
+        public void ToggleMouseDrawing()
+        {
+            _allowMouseDrawing = !_allowMouseDrawing;
+            _trayManager.ShowBalloonTip("Рисование мышью",
+                _allowMouseDrawing ? "Включено: клики рисуют клетки" : "Выключено: клики проходят сквозь обои",
+                ToolTipIcon.Info, 1000);
+        }
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            _wallpaperBitmap?.Dispose();
-            _wallpaperGraphics?.Dispose();
+            foreach (var wpForm in _wallpaperForms)
+            {
+                wpForm.DisposeResources();
+            }
+            _wallpaperForms.Clear();
+
             _trayManager?.Dispose();
             if (_isWallpaperMode) DisableWallpaperMode();
             base.OnFormClosing(e);

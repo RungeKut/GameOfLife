@@ -37,6 +37,10 @@ namespace GameOfLife
 
             _contextMenu.Items.Add(new ToolStripSeparator());
 
+            var mouseDrawingMenuItem = new ToolStripMenuItem("Рисование мышью", null, OnMouseDrawingClick);
+            mouseDrawingMenuItem.Checked = true;
+            _contextMenu.Items.Add(mouseDrawingMenuItem);
+
             // ✅ F5 - допустимая клавиша
             _randomMenuItem = new ToolStripMenuItem("Случайная генерация", null, OnRandomClick);
             _randomMenuItem.ShortcutKeys = Keys.F5;
@@ -73,6 +77,11 @@ namespace GameOfLife
             _notifyIcon.MouseClick += OnNotifyIconMouseClick;
 
             UpdateMenuState();
+        }
+
+        private void OnMouseDrawingClick(object sender, EventArgs e)
+        {
+            _mainForm.ToggleMouseDrawing();
         }
 
         private void OnNotifyIconDoubleClick(object sender, EventArgs e)

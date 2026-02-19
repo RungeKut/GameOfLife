@@ -15,14 +15,14 @@ namespace GameOfLife
         private static extern IntPtr GetShellWindow();
 
         [DllImport("user32.dll")]
-        private static extern int SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
+        public static extern int SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
 
         [DllImport("user32.dll")]
-        private static extern int MoveWindow(IntPtr hWnd, int X, int Y, int nWidth,
+        public static extern int MoveWindow(IntPtr hWnd, int X, int Y, int nWidth,
             int nHeight, bool bRepaint);
 
         [DllImport("user32.dll")]
-        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg,
@@ -62,30 +62,25 @@ namespace GameOfLife
         public static void SetAsWallpaper(Form form)
         {
             IntPtr workerW = GetWorkerW();
-
-            if (workerW == IntPtr.Zero)
+            if (workerW != IntPtr.Zero)
             {
-                MessageBox.Show("Не удалось найти окно обоев. Попробуйте свернуть все окна и попробовать снова.");
-                return;
+                form.Show();
+                Application.DoEvents();
+                System.Threading.Thread.Sleep(200);
+
+                SetParent(form.Handle, workerW);
+
+                Screen primary = Screen.PrimaryScreen;
+                MoveWindow(form.Handle,
+                    primary.Bounds.X,
+                    primary.Bounds.Y,
+                    primary.Bounds.Width,
+                    primary.Bounds.Height,
+                    true);
+
+                ShowWindow(form.Handle, SW_SHOW);
+                Application.DoEvents();
             }
-
-            form.Show();
-            Application.DoEvents();
-            System.Threading.Thread.Sleep(200);
-
-            SetParent(form.Handle, workerW);
-
-            Screen primary = Screen.PrimaryScreen;
-            MoveWindow(form.Handle,
-                primary.Bounds.X,
-                primary.Bounds.Y,
-                primary.Bounds.Width,
-                primary.Bounds.Height,
-                true);
-
-            ShowWindow(form.Handle, SW_SHOW);
-
-            Application.DoEvents();
         }
 
         public static void RestoreToNormal(Form form)

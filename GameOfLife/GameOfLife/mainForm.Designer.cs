@@ -30,6 +30,8 @@
         {
             this.components = new System.ComponentModel.Container();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.EnvironmentCheckBox = new System.Windows.Forms.CheckBox();
+            this.GenomeCheckBox = new System.Windows.Forms.CheckBox();
             this.GridCheckBox = new System.Windows.Forms.CheckBox();
             this.WorldWidthNumericUpDown = new System.Windows.Forms.NumericUpDown();
             this.WorldHeightNumericUpDown = new System.Windows.Forms.NumericUpDown();
@@ -45,6 +47,8 @@
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.pictureBox = new System.Windows.Forms.PictureBox();
             this.timer = new System.Windows.Forms.Timer(this.components);
+            this.MutationRateNumeric = new System.Windows.Forms.NumericUpDown();
+            this.MutationRateLabel = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -54,6 +58,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.nudRefresh)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudDensity)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.MutationRateNumeric)).BeginInit();
             this.SuspendLayout();
             // 
             // splitContainer1
@@ -67,12 +72,16 @@
             // 
             // splitContainer1.Panel1
             // 
+            this.splitContainer1.Panel1.Controls.Add(this.MutationRateNumeric);
+            this.splitContainer1.Panel1.Controls.Add(this.EnvironmentCheckBox);
+            this.splitContainer1.Panel1.Controls.Add(this.GenomeCheckBox);
             this.splitContainer1.Panel1.Controls.Add(this.GridCheckBox);
             this.splitContainer1.Panel1.Controls.Add(this.WorldWidthNumericUpDown);
             this.splitContainer1.Panel1.Controls.Add(this.WorldHeightNumericUpDown);
             this.splitContainer1.Panel1.Controls.Add(this.label5);
             this.splitContainer1.Panel1.Controls.Add(this.label4);
             this.splitContainer1.Panel1.Controls.Add(this.nudRefresh);
+            this.splitContainer1.Panel1.Controls.Add(this.MutationRateLabel);
             this.splitContainer1.Panel1.Controls.Add(this.label3);
             this.splitContainer1.Panel1.Controls.Add(this.bStop);
             this.splitContainer1.Panel1.Controls.Add(this.bRnd);
@@ -87,6 +96,32 @@
             this.splitContainer1.Size = new System.Drawing.Size(949, 487);
             this.splitContainer1.SplitterDistance = 88;
             this.splitContainer1.TabIndex = 0;
+            // 
+            // EnvironmentCheckBox
+            // 
+            this.EnvironmentCheckBox.AutoSize = true;
+            this.EnvironmentCheckBox.Checked = true;
+            this.EnvironmentCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.EnvironmentCheckBox.Location = new System.Drawing.Point(4, 324);
+            this.EnvironmentCheckBox.Name = "EnvironmentCheckBox";
+            this.EnvironmentCheckBox.Size = new System.Drawing.Size(57, 17);
+            this.EnvironmentCheckBox.TabIndex = 15;
+            this.EnvironmentCheckBox.Text = "Среда";
+            this.EnvironmentCheckBox.UseVisualStyleBackColor = true;
+            this.EnvironmentCheckBox.CheckedChanged += new System.EventHandler(this.EnvironmentCheckBox_CheckedChanged);
+            // 
+            // GenomeCheckBox
+            // 
+            this.GenomeCheckBox.AutoSize = true;
+            this.GenomeCheckBox.Checked = true;
+            this.GenomeCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.GenomeCheckBox.Location = new System.Drawing.Point(4, 310);
+            this.GenomeCheckBox.Name = "GenomeCheckBox";
+            this.GenomeCheckBox.Size = new System.Drawing.Size(58, 17);
+            this.GenomeCheckBox.TabIndex = 15;
+            this.GenomeCheckBox.Text = "Геном";
+            this.GenomeCheckBox.UseVisualStyleBackColor = true;
+            this.GenomeCheckBox.CheckedChanged += new System.EventHandler(this.GenomeCheckBox_CheckedChanged);
             // 
             // GridCheckBox
             // 
@@ -288,6 +323,24 @@
             this.timer.Interval = 200;
             this.timer.Tick += new System.EventHandler(this.timer_Tick);
             // 
+            // MutationRateNumeric
+            // 
+            this.MutationRateNumeric.Location = new System.Drawing.Point(4, 363);
+            this.MutationRateNumeric.Name = "MutationRateNumeric";
+            this.MutationRateNumeric.Size = new System.Drawing.Size(73, 20);
+            this.MutationRateNumeric.TabIndex = 16;
+            this.MutationRateNumeric.ValueChanged += new System.EventHandler(this.MutationRateNumeric_ValueChanged);
+            // 
+            // MutationRateLabel
+            // 
+            this.MutationRateLabel.AutoSize = true;
+            this.MutationRateLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.MutationRateLabel.Location = new System.Drawing.Point(3, 344);
+            this.MutationRateLabel.Name = "MutationRateLabel";
+            this.MutationRateLabel.Size = new System.Drawing.Size(143, 16);
+            this.MutationRateLabel.TabIndex = 4;
+            this.MutationRateLabel.Text = "Шанс мутации (%):";
+            // 
             // mainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -310,6 +363,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.nudRefresh)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudDensity)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.MutationRateNumeric)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -332,6 +386,10 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.CheckBox GridCheckBox;
         private System.Windows.Forms.MenuStrip menuStrip1;
+        private System.Windows.Forms.CheckBox EnvironmentCheckBox;
+        private System.Windows.Forms.CheckBox GenomeCheckBox;
+        private System.Windows.Forms.NumericUpDown MutationRateNumeric;
+        private System.Windows.Forms.Label MutationRateLabel;
     }
 }
 

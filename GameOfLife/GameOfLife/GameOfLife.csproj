@@ -49,6 +49,8 @@
   </ItemGroup>
   <ItemGroup>
     <!-- === Основные файлы === -->
+    <Compile Include="CellGenome.cs" />
+    <Compile Include="Environment.cs" />
     <Compile Include="Point2D.cs" />
     <Compile Include="StatusEngine.cs" />
     <Compile Include="GameEngine.cs" />

@@ -186,15 +186,12 @@ namespace GameOfLife
             for (int x = -1; x < windowSizeWidth + 1; x++)
             {
                 int _tempX = x * _zoomCount + (int)(halfSizeAbroadCellWidth * _zoomCount);
-
-                // Глобальная координата с учётом смещения
                 int globalX = x + _worldWidthDrawBegin + offsetX;
                 int _worldX = ((globalX % (int)_worldSize.X) + (int)_worldSize.X) % (int)_worldSize.X;
 
                 for (int y = -1; y < windowSizeHeight + 1; y++)
                 {
                     int _tempY = y * _zoomCount + (int)(halfSizeAbroadCellHeight * _zoomCount);
-
                     int globalY = y + _worldHeightDrawBegin + offsetY;
                     int _worldY = ((globalY % (int)_worldSize.Y) + (int)_worldSize.Y) % (int)_worldSize.Y;
 
@@ -203,10 +200,19 @@ namespace GameOfLife
                     {
                         if (_field[_worldX, _worldY])
                         {
-                            if (_zoomCount > 1)
-                                g.FillRectangle(Brushes.Crimson, _tempX + 1, _tempY + 1, _zoomCount - 1, _zoomCount - 1);
-                            else
-                                g.FillRectangle(Brushes.Crimson, _tempX, _tempY, 1, 1);
+                            // Получаем цвет на основе генома
+                            Color cellColor = Color.Crimson;
+                            var genome = _gameEngine.GetCellGenome(_worldX, _worldY);
+                            if (genome != null)
+                                cellColor = genome.GenomeColor;
+
+                            using (Brush brush = new SolidBrush(cellColor))
+                            {
+                                if (_zoomCount > 1)
+                                    g.FillRectangle(brush, _tempX + 1, _tempY + 1, _zoomCount - 1, _zoomCount - 1);
+                                else
+                                    g.FillRectangle(brush, _tempX, _tempY, 1, 1);
+                            }
                         }
                     }
                 }
@@ -488,6 +494,22 @@ namespace GameOfLife
             _trayManager.UpdateMenuState();
         }
 
+        // Методы для управления геномами
+        public void ToggleGenomes()
+        {
+            _gameEngine.GenomeEnabled = !_gameEngine.GenomeEnabled;
+            _gameEngine.FillRandom(50);
+            DrawCurrentGeneration();
+            _trayManager.ShowBalloonTip("Геномы",
+                _gameEngine.GenomeEnabled ? "Геномы включены" : "Геномы выключены",
+                ToolTipIcon.Info, 1000);
+        }
+
+        public void SetMutationRate(float rate)
+        {
+            _gameEngine.MutationRate = rate;
+        }
+
         public void ToggleControlPanel()
         {
             _isControlPanelVisible = !_isControlPanelVisible;
@@ -672,5 +694,26 @@ namespace GameOfLife
             return base.ProcessCmdKey(ref msg, keyData);
         }
         #endregion
+
+        private void GenomeCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            _gameEngine.GenomeEnabled = GenomeCheckBox.Checked;
+            _trayManager.ShowBalloonTip("Геномы",
+                GenomeCheckBox.Checked ? "Геномы включены" : "Геномы выключены",
+                ToolTipIcon.Info, 1000);
+        }
+
+        private void EnvironmentCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            _gameEngine.EnvironmentEnabled = EnvironmentCheckBox.Checked;
+            _trayManager.ShowBalloonTip("Среда",
+                EnvironmentCheckBox.Checked ? "Среда включена" : "Среда выключена",
+                ToolTipIcon.Info, 1000);
+        }
+
+        private void MutationRateNumeric_ValueChanged(object sender, EventArgs e)
+        {
+            _gameEngine.MutationRate = (float)MutationRateNumeric.Value / 100.0f;
+        }
     }
 }

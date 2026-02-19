@@ -72,7 +72,7 @@ namespace GameOfLife
         }
 
         public void DrawGeneration(int zoomCount, int worldWidthDrawBegin, int worldHeightDrawBegin,
-            float halfSizeAbroadCellWidth, float halfSizeAbroadCellHeight)
+    float halfSizeAbroadCellWidth, float halfSizeAbroadCellHeight)
         {
             if (_wallpaperGraphics == null || _isDisposed)
                 return;
@@ -86,37 +86,38 @@ namespace GameOfLife
             int windowSizeWidth = _monitor.Screen.Bounds.Width / zoomCount;
             int windowSizeHeight = _monitor.Screen.Bounds.Height / zoomCount;
 
-            // Смещение начала отрисовки с учётом позиции монитора в виртуальном столе
             int offsetX = _monitor.X / zoomCount;
             int offsetY = _monitor.Y / zoomCount;
 
-            // Рисуем клетки только для этого монитора
             for (int x = -1; x < windowSizeWidth + 1; x++)
             {
                 int tempX = x * zoomCount + (int)(halfSizeAbroadCellWidth * zoomCount);
-
-                // Глобальная координата в мире с учётом позиции монитора
                 int globalX = x + worldWidthDrawBegin + offsetX;
-                // Нормализуем для зацикленного мира
                 int worldX = ((globalX % (int)_worldSize.X) + (int)_worldSize.X) % (int)_worldSize.X;
 
                 for (int y = -1; y < windowSizeHeight + 1; y++)
                 {
                     int tempY = y * zoomCount + (int)(halfSizeAbroadCellHeight * zoomCount);
-
                     int globalY = y + worldHeightDrawBegin + offsetY;
                     int worldY = ((globalY % (int)_worldSize.Y) + (int)_worldSize.Y) % (int)_worldSize.Y;
 
-                    // Проверка границ массива
                     if (worldX >= 0 && worldX < field.GetLength(0) &&
                         worldY >= 0 && worldY < field.GetLength(1))
                     {
                         if (field[worldX, worldY])
                         {
-                            if (zoomCount > 1)
-                                _wallpaperGraphics.FillRectangle(Brushes.Crimson, tempX + 1, tempY + 1, zoomCount - 1, zoomCount - 1);
-                            else
-                                _wallpaperGraphics.FillRectangle(Brushes.Crimson, tempX, tempY, 1, 1);
+                            Color cellColor = Color.Crimson;
+                            var genome = _gameEngine.GetCellGenome(worldX, worldY);
+                            if (genome != null)
+                                cellColor = genome.GenomeColor;
+
+                            using (Brush brush = new SolidBrush(cellColor))
+                            {
+                                if (zoomCount > 1)
+                                    _wallpaperGraphics.FillRectangle(brush, tempX + 1, tempY + 1, zoomCount - 1, zoomCount - 1);
+                                else
+                                    _wallpaperGraphics.FillRectangle(brush, tempX, tempY, 1, 1);
+                            }
                         }
                     }
                 }

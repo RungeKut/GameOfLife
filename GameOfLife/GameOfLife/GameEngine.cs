@@ -1,58 +1,41 @@
 ﻿using System;
+using System.Drawing;
 using System.Threading;
 
 namespace GameOfLife
 {
     public class GameEngine
     {
-        /// <summary>
-        /// Текущий номер 
-        /// </summary>
         public int CurrentGeneration { get; private set; }
-        /// <summary>
-        /// Текущее состояние мира
-        /// </summary>
         public bool[,] CurrentWorldState { get; private set; }
-        /// <summary>
-        /// Горизонтальный размер мира
-        /// </summary>
+        public CellGenome[,] CellGenomes { get; private set; }
+        public Environment[,] WorldEnvironment { get; private set; }
         public int Rows { get; private set; }
-        /// <summary>
-        /// Вертикальный размер мира
-        /// </summary>
         public int Cols { get; private set; }
-        /// <summary>
-        /// Матрица потоков
-        /// </summary>
-        private Thread[,] _workers { get; set; }
-        /// <summary>
-        /// Максимальное количество потоков
-        /// </summary>
-        private int _threadsCount { get; set; }
-        /// <summary>
-        /// Число строк в матрице потоков
-        /// </summary>
-        private int _threadsRows { get; set; }
-        /// <summary>
-        /// Число столбцов в матрице потоков
-        /// </summary>
-        private int _threadsCols { get; set; }
-        /// <summary>
-        /// Состояние движка
-        /// </summary>
+
+        // === Настройки эволюции ===
+        public float MutationRate { get; set; } = 0.1f;
+        public bool EnvironmentEnabled { get; set; } = true;
+        public bool GenomeEnabled { get; set; } = true;
+
         public StatusEngine _statusEngine { get; set; }
+
+        private Thread[,] _workers { get; set; }
+        private int _threadsCount { get; set; }
+        private int _threadsRows { get; set; }
+        private int _threadsCols { get; set; }
 
         public GameEngine()
         {
-            _statusEngine = StatusEngine.stop; // Начальное состояние
-            _threadsCount = Environment.ProcessorCount; // Получаем количество логических процессоров
+            _statusEngine = StatusEngine.stop;
+            _threadsCount = System.Environment.ProcessorCount;
 
-            #region Находим оптимальный размер матрицы потоков, чтобы вдальнейшем удобно соотнести расчет мира (и рендер изображений)
+            #region Оптимизация матрицы потоков
             _threadsRows = _threadsCount;
             _threadsCols = 1;
             while (true)
             {
-                if ((_threadsRows > _threadsCols) & (_threadsRows % 2 == 0))
+                if ((_threadsRows > _threadsCols) && (_threadsRows % 2 == 0))
                 {
                     _threadsRows = _threadsRows / 2;
                     _threadsCols = _threadsCols * 2;
@@ -73,6 +56,11 @@ namespace GameOfLife
             this.Rows = (int)worldSize.Y;
             this.Cols = (int)worldSize.X;
             CurrentWorldState = new bool[this.Cols, this.Rows];
+
+            if (GenomeEnabled)
+                CellGenomes = new CellGenome[this.Cols, this.Rows];
+            if (EnvironmentEnabled)
+                WorldEnvironment = new Environment[this.Cols, this.Rows];
         }
 
         public void FillRandom(int density)
@@ -83,19 +71,22 @@ namespace GameOfLife
                 for (int y = 0; y < Rows; y++)
                 {
                     CurrentWorldState[x, y] = random.Next(density) == 0;
+
+                    if (CurrentWorldState[x, y] && GenomeEnabled)
+                        CellGenomes[x, y] = new CellGenome();
+
+                    if (EnvironmentEnabled)
+                        WorldEnvironment[x, y] = new Environment();
                 }
             }
-        }
-
-        public bool[,] ApplyLifeRules(bool[,] currentWorldState, int cols, int rows)
-        {
-            bool[,] newWorldState = new bool[cols, rows]; // Создаем новое состояние мира
-            return newWorldState;
         }
 
         public void NextGeneration()
         {
             var newField = new bool[Cols, Rows];
+            var newGenomes = GenomeEnabled ? new CellGenome[Cols, Rows] : null;
+
+            Random rand = new Random();
 
             for (int x = 0; x < Cols; x++)
             {
@@ -103,58 +94,110 @@ namespace GameOfLife
                 {
                     var neighboursCount = CountNeighbours(x, y, 1);
                     var hasLife = CurrentWorldState[x, y];
+                    var genome = GenomeEnabled ? CellGenomes[x, y] : null;
+                    var env = EnvironmentEnabled ? WorldEnvironment[x, y] : null;
 
-                    if (!hasLife && neighboursCount == 3)
+                    float survivalModifier = env?.GetSurvivalModifier(genome) ?? 1.0f;
+
+                    byte birthThreshold = genome?.BirthThreshold ?? 3;
+                    byte survivalMin = genome?.SurvivalMin ?? 2;
+                    byte survivalMax = genome?.SurvivalMax ?? 3;
+
+                    if (!hasLife && neighboursCount == birthThreshold)
                     {
                         newField[x, y] = true;
+
+                        if (GenomeEnabled)
+                        {
+                            CellGenome parentGenome = GetRandomNeighbourGenome(x, y);
+                            if (parentGenome != null && rand.NextFloat() < (1.0f - MutationRate))
+                                newGenomes[x, y] = new CellGenome(parentGenome);
+                            else
+                                newGenomes[x, y] = new CellGenome();
+                        }
                     }
-                    else if (hasLife && (neighboursCount < 2 || neighboursCount > 3))
+                    else if (hasLife && neighboursCount >= survivalMin && neighboursCount <= survivalMax)
                     {
-                        newField[x, y] = false;
+                        if (rand.NextFloat() < survivalModifier)
+                        {
+                            newField[x, y] = true;
+                            if (GenomeEnabled)
+                                newGenomes[x, y] = genome;
+                        }
+
+                        if (EnvironmentEnabled && genome != null)
+                            env?.ConsumeEnergy(genome.Metabolism);
                     }
                     else
                     {
-                        newField[x, y] = CurrentWorldState[x, y];
+                        newField[x, y] = false;
                     }
                 }
             }
+
             CurrentWorldState = newField;
+            if (GenomeEnabled)
+                CellGenomes = newGenomes;
+
+            if (EnvironmentEnabled)
+            {
+                for (int x = 0; x < Cols; x++)
+                    for (int y = 0; y < Rows; y++)
+                        WorldEnvironment[x, y]?.Regenerate();
+            }
+
             CurrentGeneration++;
+        }
+
+        private CellGenome GetRandomNeighbourGenome(int x, int y)
+        {
+            Random rand = new Random();
+            int attempts = 0;
+            while (attempts < 8)
+            {
+                int nx = (x + rand.Next(-1, 2) + Cols) % Cols;
+                int ny = (y + rand.Next(-1, 2) + Rows) % Rows;
+                if (nx != x || ny != y)
+                {
+                    if (CurrentWorldState[nx, ny] && CellGenomes[nx, ny] != null)
+                        return CellGenomes[nx, ny];
+                }
+                attempts++;
+            }
+            return null;
         }
 
         public bool[,] GetCurrentGeneration()
         {
-            var result = new bool[Cols, Rows];
-            for (int x = 0; x < Cols; x++)
-            {
-                for (int y = 0; y < Rows; y++)
-                {
-                    result[x, y] = CurrentWorldState[x, y];
-                }
-            }
-            return result;
+            return CurrentWorldState;
         }
 
-        /// <summary>
-        /// Подсчет количества соседей
-        /// </summary>
-        /// <param name="x">Горизонтальная координата</param>
-        /// <param name="y">Вертикальная координата</param>
-        /// <param name="r">Считать в радиусе</param>
-        /// <returns></returns>
+        public CellGenome GetCellGenome(int x, int y)
+        {
+            if (!GenomeEnabled || CellGenomes == null) return null;
+            if (x < 0 || x >= Cols || y < 0 || y >= Rows) return null;
+            return CellGenomes[x, y];
+        }
+
+        public Environment GetCellEnvironment(int x, int y)
+        {
+            if (!EnvironmentEnabled || WorldEnvironment == null) return null;
+            if (x < 0 || x >= Cols || y < 0 || y >= Rows) return null;
+            return WorldEnvironment[x, y];
+        }
+
         private int CountNeighbours(int x, int y, int r)
         {
-            // Итак допустим я нахожусь по координатам x,y
-            int count = 0; // Переменная для подсчета количества моих соседей
-            for (int i = 0; i < (2 * r + 1); i++) // Определяем ширину квадрата вокруг меня заданным радиусом
+            int count = 0;
+            for (int i = 0; i < (2 * r + 1); i++)
             {
-                for (int j = 0; j < (2 * r + 1); j++) // Определяем высоту квадрата вокруг меня заданным радиусом
+                for (int j = 0; j < (2 * r + 1); j++)
                 {
-                    var col = (x + (i - 1) + Cols) % Cols; // Определяем горизонтальную координату соседа учитывая границы мира (закольцовывание по горизонтали)
-                    var row = (y + (j - 1) + Rows) % Rows; // Определяем вертикальную координату соседа учитывая границы мира (закольцовывание по вертикали)
-                    var isSelfChecking = col == x && row == y; // Проверяем, не совпадают ли координаты соседа с моими.
-                    var hasLife = CurrentWorldState[col, row]; // Смотрим есть сосед по текущим координатам или нет
-                    if (hasLife && !isSelfChecking) count++; // Ну и увеличиваем счетчик соседей если он есть по текущим координатам и если он это не я
+                    var col = (x + (i - 1) + Cols) % Cols;
+                    var row = (y + (j - 1) + Rows) % Rows;
+                    var isSelfChecking = col == x && row == y;
+                    var hasLife = CurrentWorldState[col, row];
+                    if (hasLife && !isSelfChecking) count++;
                 }
             }
             return count;
@@ -165,20 +208,29 @@ namespace GameOfLife
             return x >= 0 && y >= 0 && x < Cols && y < Rows;
         }
 
-        private void UpdateCell(int x, int y, bool state)
-        {
-            if (ValidateCellPosition(x, y))
-                CurrentWorldState[x, y] = state;
-        }
-
         public void AddCell(int x, int y)
         {
-            UpdateCell(x, y, state: true);
+            if (ValidateCellPosition(x, y))
+            {
+                CurrentWorldState[x, y] = true;
+                if (GenomeEnabled && CellGenomes[x, y] == null)
+                    CellGenomes[x, y] = new CellGenome();
+            }
         }
 
         public void RemoveCell(int x, int y)
         {
-            UpdateCell(x, y, state: false);
+            if (ValidateCellPosition(x, y))
+                CurrentWorldState[x, y] = false;
+        }
+    }
+
+    public static class RandomExtensions
+    {
+        private static Random _rand = new Random();
+        public static float NextFloat(this Random rand)
+        {
+            return (float)_rand.NextDouble();
         }
     }
 }

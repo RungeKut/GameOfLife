@@ -52,10 +52,7 @@ namespace GameOfLife
 
             SaveControlPanelReferences();
 
-            // ✅ Инициализируем виртуальный рабочий стол
             _monitors = VirtualDesktop.GetMonitors();
-
-            // ✅ Авто-расчёт размера мира по всем мониторам
             _worldSize = VirtualDesktop.GetWorldSize(_monitors, _cellSize);
 
             _gameEngine = new GameEngine();
@@ -72,6 +69,9 @@ namespace GameOfLife
 
             GridCheckBox.Checked = false;
 
+            // ✅ Инициализируем значения NumericUpDown
+            UpdateWorldSizeControls();
+
             _trayManager = new TrayManager(this);
 
             try
@@ -83,7 +83,7 @@ namespace GameOfLife
             catch { }
 
             _trayManager.ShowBalloonTip("Game of Life",
-                $"Приложение запущено. Обнаружено {_monitors.Count} монитор(а). Используйте иконку в трее для управления.",
+                "Приложение запущено. Обнаружено " + _monitors.Count + " монитор(а). Используйте иконку в трее для управления.",
                 ToolTipIcon.Info, 3000);
         }
 
@@ -150,6 +150,9 @@ namespace GameOfLife
         {
             foreach (var wpForm in _wallpaperForms)
             {
+                // ✅ Обновляем видимость границ перед отрисовкой
+                wpForm.SetWorldBorderVisibility(WorldBorderCheckBox.Checked);
+
                 wpForm.DrawGeneration(_zoomCount, _worldWidthDrawBegin, _worldHeightDrawBegin,
                     _halfSizeAbroadCellWidth, _halfSizeAbroadCellHeight);
             }
@@ -202,28 +205,10 @@ namespace GameOfLife
                     {
                         if (_field[_worldX, _worldY])
                         {
-                            // ✅ Получаем цвет на основе генома и типа клетки
                             Color cellColor = Color.Crimson;
                             var genome = _gameEngine.GetCellGenome(_worldX, _worldY);
                             if (genome != null)
                                 cellColor = genome.GenomeColor;
-
-                            // ✅ Рисуем индикатор энергии для крупных клеток
-                            if (_zoomCount > 4 && genome != null)
-                            {
-                                int energy = _gameEngine.GetCellEnergy(_worldX, _worldY);
-                                int maxEnergy = genome.MaxEnergy * 10;
-                                float energyRatio = (float)energy / maxEnergy;
-
-                                // Тёмная обводка для низкой энергии
-                                if (energyRatio < 0.3f)
-                                {
-                                    using (Pen pen = new Pen(Color.Red, 2))
-                                    {
-                                        g.DrawRectangle(pen, _tempX, _tempY, _zoomCount - 1, _zoomCount - 1);
-                                    }
-                                }
-                            }
 
                             using (Brush brush = new SolidBrush(cellColor))
                             {
@@ -234,6 +219,54 @@ namespace GameOfLife
                             }
                         }
                     }
+                }
+            }
+
+            // ✅ ОТРИСОВКА ГРАНИЦ МИРА (в конце, поверх клеток)
+            if (WorldBorderCheckBox != null && WorldBorderCheckBox.Checked)
+            {
+                DrawWorldBorder(g, width, height, halfSizeAbroadCellWidth, halfSizeAbroadCellHeight, offsetX, offsetY);
+            }
+        }
+
+        // ✅ НОВЫЙ МЕТОД: Отрисовка границ мира (сетка, 1 пиксель)
+        private void DrawWorldBorder(Graphics g, int width, int height,
+            float halfSizeAbroadCellWidth, float halfSizeAbroadCellHeight,
+            int offsetX, int offsetY)
+        {
+            using (Pen borderPen = new Pen(Color.White, 1))  // ✅ ТОЛЩИНА 1 ПИКСЕЛЬ
+            {
+                // Размер одной копии мира в пикселях
+                int worldWidthPixels = (int)_worldSize.X * _zoomCount;
+                int worldHeightPixels = (int)_worldSize.Y * _zoomCount;
+
+                // Начальная позиция (левый верхний угол первой копии)
+                int startX = (int)(halfSizeAbroadCellWidth * _zoomCount) + offsetX;
+                int startY = (int)(halfSizeAbroadCellHeight * _zoomCount) + offsetY;
+
+                // Нормализуем start в пределах одной копии мира
+                startX = startX % worldWidthPixels;
+                if (startX < 0) startX += worldWidthPixels;
+
+                startY = startY % worldHeightPixels;
+                if (startY < 0) startY += worldHeightPixels;
+
+                // Сдвигаем назад, чтобы покрыть всю видимую область
+                startX -= worldWidthPixels;
+                startY -= worldHeightPixels;
+
+                // ✅ Рисуем сетку горизонтальных линий (границы по Y)
+                for (int y = startY; y < height; y += worldHeightPixels)
+                {
+                    if (y >= 0)
+                        g.DrawLine(borderPen, 0, y, width, y);
+                }
+
+                // ✅ Рисуем сетку вертикальных линий (границы по X)
+                for (int x = startX; x < width; x += worldWidthPixels)
+                {
+                    if (x >= 0)
+                        g.DrawLine(borderPen, x, 0, x, height);
                 }
             }
         }
@@ -437,14 +470,38 @@ namespace GameOfLife
 
         private void WorldHeightNumericUpDown_ValueChanged(object sender, EventArgs e)
         {
+            // ✅ Работаем только в режиме формы
+            if (_isWallpaperMode) return;
+
             _worldSize.Y = (int)WorldHeightNumericUpDown.Value;
             _gameEngine.ResizeWorld(_worldSize);
+            DrawCurrentGeneration();
+
+            // ✅ Обновляем заголовок
+            UpdateFormTitle();
         }
 
         private void WorldWidthNumericUpDown_ValueChanged(object sender, EventArgs e)
         {
+            // ✅ Работаем только в режиме формы
+            if (_isWallpaperMode) return;
+
             _worldSize.X = (int)WorldWidthNumericUpDown.Value;
             _gameEngine.ResizeWorld(_worldSize);
+            DrawCurrentGeneration();
+
+            // ✅ Обновляем заголовок
+            UpdateFormTitle();
+        }
+
+        private void UpdateWorldSizeControls()
+        {
+            // ✅ Обновляем значения полей при изменении размера мира
+            if (WorldWidthNumericUpDown != null)
+                WorldWidthNumericUpDown.Value = (int)_worldSize.X;
+
+            if (WorldHeightNumericUpDown != null)
+                WorldHeightNumericUpDown.Value = (int)_worldSize.Y;
         }
 
         private void nudDensity_ValueChanged(object sender, EventArgs e)
@@ -551,7 +608,6 @@ namespace GameOfLife
 
             _monitors = VirtualDesktop.GetMonitors();
 
-            // Учитываем зум при расчёте размера мира
             _worldSize = VirtualDesktop.GetWorldSize(_monitors, _cellSize * _zoomCount);
             _gameEngine.ResizeWorld(_worldSize);
 
@@ -562,6 +618,10 @@ namespace GameOfLife
             {
                 var wpForm = new WallpaperForm(_gameEngine, monitor, _cellSize * _zoomCount, _worldSize);
                 wpForm.InitializeBitmap();
+
+                // ✅ Передаём настройку видимости границ
+                wpForm.SetWorldBorderVisibility(WorldBorderCheckBox.Checked);
+
                 _wallpaperForms.Add(wpForm);
             }
 
@@ -585,7 +645,6 @@ namespace GameOfLife
 
         private void DisableWallpaperMode()
         {
-            // ✅ Скрываем и очищаем все формы обоев
             foreach (var wpForm in _wallpaperForms)
             {
                 wpForm.HideWallpaper();
@@ -593,11 +652,24 @@ namespace GameOfLife
             }
             _wallpaperForms.Clear();
 
-            // ✅ Показываем основную форму
             this.Show();
             this.FormBorderStyle = FormBorderStyle.Sizable;
             this.WindowState = FormWindowState.Normal;
             this.ShowInTaskbar = true;
+
+            // ✅ Включаем ручное изменение размера в режиме формы
+            if (WorldWidthNumericUpDown != null)
+                WorldWidthNumericUpDown.Enabled = true;
+            if (WorldHeightNumericUpDown != null)
+                WorldHeightNumericUpDown.Enabled = true;
+
+            // ✅ Восстанавливаем размер мира для режима формы
+            _monitors = VirtualDesktop.GetMonitors();
+            _worldSize = VirtualDesktop.GetWorldSize(_monitors, _cellSize);
+            _gameEngine.ResizeWorld(_worldSize);
+
+            // ✅ Обновляем значения в NumericUpDown
+            UpdateWorldSizeControls();
 
             UpdateControlPanelVisibility();
             pictureBox.Visible = true;
@@ -605,6 +677,8 @@ namespace GameOfLife
             DrawToPictureBox();
 
             _isWallpaperMode = false;
+
+            UpdateFormTitle();
         }
 
         private void UpdateControlPanelVisibility()
@@ -613,6 +687,7 @@ namespace GameOfLife
 
             foreach (Control ctrl in _controlPanelControls)
             {
+                // ✅ Показываем панель только в режиме формы
                 ctrl.Visible = _isControlPanelVisible && !_isWallpaperMode;
             }
 
@@ -620,6 +695,12 @@ namespace GameOfLife
             {
                 _mainMenu.Visible = _isControlPanelVisible && !_isWallpaperMode;
             }
+
+            // ✅ Отдельно управляем NumericUpDown
+            if (WorldWidthNumericUpDown != null)
+                WorldWidthNumericUpDown.Enabled = !_isWallpaperMode;
+            if (WorldHeightNumericUpDown != null)
+                WorldHeightNumericUpDown.Enabled = !_isWallpaperMode;
         }
 
         private void mainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -665,24 +746,27 @@ namespace GameOfLife
             _zoomCount = zoomLevel;
 
             _monitors = VirtualDesktop.GetMonitors();
-            _worldSize = VirtualDesktop.GetWorldSize(_monitors, _cellSize * _zoomCount);
+
+            // ✅ В режиме формы - размер от мониторов и зума
+            if (!_isWallpaperMode)
+                _worldSize = VirtualDesktop.GetWorldSize(_monitors, _cellSize * _zoomCount);
 
             _currentWorldX = (int)((centerX * _worldSize.X) / oldWorldWidth);
             _currentWorldY = (int)((centerY * _worldSize.Y) / oldWorldHeight);
 
             _gameEngine.ResizeWorld(_worldSize);
 
+            // ✅ Обновляем NumericUpDown только в режиме формы
+            if (!_isWallpaperMode)
+                UpdateWorldSizeControls();
+
             CalculatingSize();
             CalculatingDrawBegin();
 
             if (_isWallpaperMode)
-            {
                 DrawToAllWallpapers();
-            }
             else
-            {
                 DrawToPictureBox();
-            }
 
             UpdateFormTitle();
 
@@ -748,6 +832,11 @@ namespace GameOfLife
                     $"Включено ({System.Environment.ProcessorCount} ядер)" :
                     "Выключено (последовательно)",
                 ToolTipIcon.Info, 1000);
+        }
+
+        private void WorldBorderCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            DrawCurrentGeneration();
         }
     }
 }

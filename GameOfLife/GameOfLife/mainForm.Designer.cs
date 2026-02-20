@@ -51,6 +51,7 @@
             this.MutationRateLabel = new System.Windows.Forms.Label();
             this.ShowToxicityCheckBox = new System.Windows.Forms.CheckBox();
             this.ParallelCheckBox = new System.Windows.Forms.CheckBox();
+            this.WorldBorderCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -76,6 +77,7 @@
             // 
             this.splitContainer1.Panel1.Controls.Add(this.MutationRateNumeric);
             this.splitContainer1.Panel1.Controls.Add(this.EnvironmentCheckBox);
+            this.splitContainer1.Panel1.Controls.Add(this.WorldBorderCheckBox);
             this.splitContainer1.Panel1.Controls.Add(this.ParallelCheckBox);
             this.splitContainer1.Panel1.Controls.Add(this.ShowToxicityCheckBox);
             this.splitContainer1.Panel1.Controls.Add(this.GenomeCheckBox);
@@ -369,6 +371,19 @@
             this.ParallelCheckBox.UseVisualStyleBackColor = true;
             this.ParallelCheckBox.CheckedChanged += new System.EventHandler(this.ParallelCheckBox_CheckedChanged);
             // 
+            // WorldBorderCheckBox
+            // 
+            this.WorldBorderCheckBox.AutoSize = true;
+            this.WorldBorderCheckBox.Checked = true;
+            this.WorldBorderCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.WorldBorderCheckBox.Location = new System.Drawing.Point(4, 417);
+            this.WorldBorderCheckBox.Name = "WorldBorderCheckBox";
+            this.WorldBorderCheckBox.Size = new System.Drawing.Size(99, 17);
+            this.WorldBorderCheckBox.TabIndex = 15;
+            this.WorldBorderCheckBox.Text = "Границы мира";
+            this.WorldBorderCheckBox.UseVisualStyleBackColor = true;
+            this.WorldBorderCheckBox.CheckedChanged += new System.EventHandler(this.WorldBorderCheckBox_CheckedChanged);
+            // 
             // mainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -420,6 +435,7 @@
         private System.Windows.Forms.Label MutationRateLabel;
         private System.Windows.Forms.CheckBox ShowToxicityCheckBox;
         private System.Windows.Forms.CheckBox ParallelCheckBox;
+        private System.Windows.Forms.CheckBox WorldBorderCheckBox;
     }
 }
 

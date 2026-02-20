@@ -10,12 +10,13 @@ namespace GameOfLife
         public bool[,] CurrentWorldState { get; private set; }
         public CellGenome[,] CellGenomes { get; private set; }
         public Environment[,] WorldEnvironment { get; private set; }
-        public int[,] CellEnergy { get; private set; }
-        public int[,] CellCooldowns { get; private set; }
+        public int[,] CellEnergy { get; private set; }      // ✅ Энергия каждой клетки
+        public int[,] CellCooldowns { get; private set; }   // ✅ Перезарядка атаки
 
         public int Rows { get; private set; }
         public int Cols { get; private set; }
 
+        // === Настройки симуляции ===
         public float MutationRate { get; set; } = 0.1f;
         public bool EnvironmentEnabled { get; set; } = true;
         public bool GenomeEnabled { get; set; } = true;
@@ -25,7 +26,7 @@ namespace GameOfLife
 
         public StatusEngine _statusEngine { get; set; }
 
-        // ✅ Thread-local Random для каждого потока
+        // ✅ Thread-local Random для каждого потока (без блокировок)
         private ThreadLocal<Random> _threadRandom = new ThreadLocal<Random>(() =>
             new Random(Guid.NewGuid().GetHashCode()));
 
@@ -45,13 +46,14 @@ namespace GameOfLife
             if (EnvironmentEnabled)
                 WorldEnvironment = new Environment[this.Cols, this.Rows];
 
+            // ✅ Инициализируем энергию и перезарядку
             CellEnergy = new int[this.Cols, this.Rows];
             CellCooldowns = new int[this.Cols, this.Rows];
         }
 
         public void FillRandom(int density)
         {
-            // ✅ Параллельное заполнение
+            // ✅ Параллельное заполнение для больших миров
             if (ParallelProcessing && Cols > 100)
             {
                 Parallel.For(0, Cols, x =>
@@ -65,6 +67,7 @@ namespace GameOfLife
                         {
                             CellGenomes[x, y] = new CellGenome();
                             CellEnergy[x, y] = CellGenomes[x, y].MaxEnergy * 10;
+                            CellCooldowns[x, y] = 0;
                         }
 
                         if (EnvironmentEnabled)
@@ -85,6 +88,7 @@ namespace GameOfLife
                         {
                             CellGenomes[x, y] = new CellGenome();
                             CellEnergy[x, y] = CellGenomes[x, y].MaxEnergy * 10;
+                            CellCooldowns[x, y] = 0;
                         }
 
                         if (EnvironmentEnabled)
@@ -101,7 +105,7 @@ namespace GameOfLife
             var newEnergy = new int[Cols, Rows];
             var newCooldowns = new int[Cols, Rows];
 
-            // ✅ ПАРАЛЛЕЛЬНАЯ ОБРАБОТКА
+            // ✅ ПАРАЛЛЕЛЬНАЯ ОБРАБОТКА для больших миров
             if (ParallelProcessing && Cols > 50 && Rows > 50)
             {
                 Parallel.For(0, Cols, new ParallelOptions
@@ -110,7 +114,6 @@ namespace GameOfLife
                 }, x =>
                 {
                     var rand = _threadRandom.Value;
-
                     for (int y = 0; y < Rows; y++)
                     {
                         ProcessCell(x, y, newField, newGenomes, newEnergy, newCooldowns, rand);
@@ -158,7 +161,7 @@ namespace GameOfLife
             CurrentGeneration++;
         }
 
-        // ✅ Вынесена логика клетки в отдельный метод (инлайн для скорости)
+        // ✅ Обработка одной клетки (вынесена для параллелизма)
         private void ProcessCell(int x, int y, bool[,] newField, CellGenome[,] newGenomes,
             int[,] newEnergy, int[,] newCooldowns, Random rand)
         {
@@ -169,7 +172,7 @@ namespace GameOfLife
             var energy = hasLife ? CellEnergy[x, y] : 0;
             var cooldown = hasLife ? CellCooldowns[x, y] : 0;
 
-            // ✅ Встроенный расчёт модификатора (без вызова метода)
+            // ✅ Расчёт модификатора выживания от среды (инлайн для скорости)
             float survivalModifier = 1.0f;
             if (env != null && GenomeEnabled)
             {
@@ -188,6 +191,9 @@ namespace GameOfLife
 
                     if (genome.Metabolism > 7 && env.Toxicity > 5)
                         survivalModifier -= 0.2f;
+
+                    if (genome.VisionRange > 7 && env.NutrientLevel > 5)
+                        survivalModifier += 0.1f;
                 }
 
                 survivalModifier = Math.Max(0.1f, Math.Min(2.0f, survivalModifier));
@@ -197,26 +203,26 @@ namespace GameOfLife
             byte survivalMin = genome?.SurvivalMin ?? 2;
             byte survivalMax = genome?.SurvivalMax ?? 3;
 
-            // Обработка охоты
+            // ✅ Обработка охоты
             if (hasLife && HuntingEnabled && genome != null && genome.HuntStrength > 0 && cooldown <= 0)
             {
                 TryHunt(x, y, genome, env, newField, newGenomes, newEnergy, rand);
                 cooldown = genome.HuntCooldown;
             }
 
-            // Обработка движения
+            // ✅ Обработка движения
             if (hasLife && MovementEnabled && genome != null && genome.MovementTendency > 5 && energy > genome.MovementCost)
             {
                 TryMove(x, y, genome, env, newField, newGenomes, newEnergy, newCooldowns, ref energy, rand);
             }
 
-            // Обработка защиты (снаряды)
+            // ✅ Обработка защиты (снаряды)
             if (hasLife && genome != null && genome.ProjectileSpawnRate > 0 && rand.Next(10) < genome.ProjectileSpawnRate)
             {
                 TrySpawnProjectile(x, y, genome, newField, newGenomes, newEnergy, rand);
             }
 
-            // Рождение
+            // ✅ Рождение новой клетки
             if (!hasLife && neighboursCount == birthThreshold)
             {
                 newField[x, y] = true;
@@ -233,15 +239,22 @@ namespace GameOfLife
                     newEnergy[x, y] = newGenomes[x, y].MaxEnergy * 10;
                 }
             }
-            // Выживание
+            // ✅ Выживание существующей клетки
             else if (hasLife && neighboursCount >= survivalMin && neighboursCount <= survivalMax)
             {
-                if ((float)rand.NextDouble() < survivalModifier && energy > 0)
+                // ✅ ПРОВЕРКА: клетка умирает от голода если энергия <= 0
+                if (energy <= 0)
+                {
+                    env?.OnCellDeath((byte)(genome?.MaxEnergy ?? 5));
+                    newField[x, y] = false;
+                }
+                else if ((float)rand.NextDouble() < survivalModifier)
                 {
                     newField[x, y] = true;
                     if (GenomeEnabled)
                         newGenomes[x, y] = genome;
 
+                    // ✅ Потребление энергии за цикл жизни
                     int energyCost = genome?.Metabolism ?? 1;
                     newEnergy[x, y] = Math.Max(0, energy - energyCost);
                     newCooldowns[x, y] = Math.Max(0, cooldown - 1);
@@ -251,38 +264,18 @@ namespace GameOfLife
                 else
                 {
                     env?.OnCellDeath((byte)(genome?.MaxEnergy ?? 5));
+                    newField[x, y] = false;
                 }
             }
             else if (hasLife)
             {
+                // Смерть от перенаселения или голода
                 env?.OnCellDeath((byte)(genome?.MaxEnergy ?? 5));
+                newField[x, y] = false;
             }
         }
 
-        // ✅ Оптимизированный подсчёт соседей (без лишних проверок)
-        private int CountNeighbours(int x, int y, int r)
-        {
-            int count = 0;
-            int cols = Cols;
-            int rows = Rows;
-            var state = CurrentWorldState;
-
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    if (i == 1 && j == 1) continue;
-
-                    int col = (x + i - 1 + cols) % cols;
-                    int row = (y + j - 1 + rows) % rows;
-
-                    if (state[col, row]) count++;
-                }
-            }
-            return count;
-        }
-
-        // ✅ Охота (упрощённая)
+        // ✅ Охота на соседние клетки
         private void TryHunt(int x, int y, CellGenome hunterGenome, Environment env,
             bool[,] newField, CellGenome[,] newGenomes, int[,] newEnergy, Random rand)
         {
@@ -303,12 +296,15 @@ namespace GameOfLife
                     {
                         var preyGenome = genomes[nx, ny];
 
+                        // Проверка: сила охоты vs сила защиты
                         if (hunterGenome.HuntStrength > preyGenome.DefenseStrength ||
                             rand.Next(10) < hunterGenome.HuntStrength)
                         {
+                            // Успешная охота - убиваем жертву
                             newField[nx, ny] = false;
                             newEnergy[nx, ny] = 0;
 
+                            // ✅ Хищник получает энергию от жертвы
                             int energyGain = preyGenome.MaxEnergy * 5;
                             CellEnergy[x, y] = Math.Min(hunterGenome.MaxEnergy * 10, CellEnergy[x, y] + energyGain);
 
@@ -320,7 +316,7 @@ namespace GameOfLife
             }
         }
 
-        // ✅ Движение (упрощённое)
+        // ✅ Движение клетки в поисках лучших условий
         private void TryMove(int x, int y, CellGenome genome, Environment env,
             bool[,] newField, CellGenome[,] newGenomes, int[,] newEnergy, int[,] newCooldowns,
             ref int energy, Random rand)
@@ -332,6 +328,7 @@ namespace GameOfLife
             float bestScore = -1000;
             var state = CurrentWorldState;
 
+            // Ищем лучшую позицию для движения
             for (int dx = -moveSpeed; dx <= moveSpeed; dx++)
             {
                 for (int dy = -moveSpeed; dy <= moveSpeed; dy++)
@@ -341,8 +338,10 @@ namespace GameOfLife
                     int nx = (x + dx + Cols) % Cols;
                     int ny = (y + dy + Rows) % Rows;
 
+                    // Не двигаемся в занятую клетку
                     if (state[nx, ny]) continue;
 
+                    // Оцениваем позицию
                     float score = 0;
                     var targetEnv = EnvironmentEnabled ? WorldEnvironment[nx, ny] : null;
                     if (targetEnv != null)
@@ -350,6 +349,13 @@ namespace GameOfLife
                         score += targetEnv.NutrientLevel * 2;
                         score -= targetEnv.Toxicity * 3;
                         score += targetEnv.OxygenLevel;
+                    }
+
+                    // Избегаем хищников (для не-хищников)
+                    if (genome.CellType != CellType.Predator)
+                    {
+                        int predatorCount = CountPredatorNeighbours(nx, ny, genome.VisionRange);
+                        score -= predatorCount * 10;
                     }
 
                     if (score > bestScore)
@@ -361,6 +367,7 @@ namespace GameOfLife
                 }
             }
 
+            // Двигаемся если нашли лучшую позицию
             if (bestX != x || bestY != y)
             {
                 newField[bestX, bestY] = true;
@@ -373,6 +380,7 @@ namespace GameOfLife
             }
             else
             {
+                // Остаёмся на месте
                 newField[x, y] = true;
                 newGenomes[x, y] = genome;
                 newEnergy[x, y] = energy;
@@ -380,7 +388,7 @@ namespace GameOfLife
             }
         }
 
-        // ✅ Создание снаряда
+        // ✅ Создание снаряда для защиты
         private void TrySpawnProjectile(int x, int y, CellGenome parentGenome,
             bool[,] newField, CellGenome[,] newGenomes, int[,] newEnergy, Random rand)
         {
@@ -396,7 +404,7 @@ namespace GameOfLife
             {
                 newField[nx, ny] = true;
                 newGenomes[nx, ny] = CreateProjectileGenome(parentGenome);
-                newEnergy[nx, ny] = 5;
+                newEnergy[nx, ny] = 5; // Снаряды живут недолго
             }
         }
 
@@ -415,6 +423,33 @@ namespace GameOfLife
             return projectile;
         }
 
+        // ✅ Подсчёт хищников в радиусе зрения
+        private int CountPredatorNeighbours(int x, int y, int range)
+        {
+            int count = 0;
+            var state = CurrentWorldState;
+            var genomes = CellGenomes;
+
+            for (int dx = -range; dx <= range; dx++)
+            {
+                for (int dy = -range; dy <= range; dy++)
+                {
+                    if (dx == 0 && dy == 0) continue;
+
+                    int nx = (x + dx + Cols) % Cols;
+                    int ny = (y + dy + Rows) % Rows;
+
+                    if (state[nx, ny] && genomes[nx, ny] != null)
+                    {
+                        if (genomes[nx, ny].CellType == CellType.Predator)
+                            count++;
+                    }
+                }
+            }
+            return count;
+        }
+
+        // ✅ Получение генома от случайного соседа для наследования
         private CellGenome GetRandomNeighbourGenome(int x, int y)
         {
             var rand = _threadRandom.Value;
@@ -430,6 +465,29 @@ namespace GameOfLife
                     return genomes[nx, ny];
             }
             return null;
+        }
+
+        // ✅ Оптимизированный подсчёт соседей
+        private int CountNeighbours(int x, int y, int r)
+        {
+            int count = 0;
+            int cols = Cols;
+            int rows = Rows;
+            var state = CurrentWorldState;
+
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    if (i == 1 && j == 1) continue;
+
+                    int col = (x + i - 1 + cols) % cols;
+                    int row = (y + j - 1 + rows) % rows;
+
+                    if (state[col, row]) count++;
+                }
+            }
+            return count;
         }
 
         public bool[,] GetCurrentGeneration() => CurrentWorldState;
@@ -477,7 +535,4 @@ namespace GameOfLife
                 CurrentWorldState[x, y] = false;
         }
     }
-
-    // ❌ УДАЛИТЬ этот класс - он создаёт блокировки!
-    // public static class RandomExtensions { ... }
 }

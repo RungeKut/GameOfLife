@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace GameOfLife
+namespace GameOfLife.Engine
 {
     public class GameEngine
     {

@@ -591,5 +591,23 @@ namespace GameOfLife.Core
         }
 
         #endregion
+		
+		#region Режимы симуляции
+		
+		/// <summary>
+		/// Текущий режим симуляции.
+		/// </summary>
+		private ISimulationMode _mode;
+		
+		/// <summary>
+		/// Устанавливает режим симуляции.
+		/// </summary>
+		public void SetMode(ISimulationMode mode)
+		{
+			_mode = mode;
+			_mode.Initialize(_config);
+		}
+		
+		#endregion
     }
 }

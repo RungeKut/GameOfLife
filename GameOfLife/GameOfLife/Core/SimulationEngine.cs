@@ -1,4 +1,6 @@
+using GameOfLife.Parallel;
 using GameOfLife.Rendering;
+using GameOfLife.Utils;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -715,6 +717,40 @@ namespace GameOfLife.Core
                 Width,
                 Height
             );
+        }
+
+        #endregion
+
+        #region Оптимизация
+
+        /// <summary>
+        /// Менеджер счётчиков производительности.
+        /// </summary>
+        private PerformanceManager _performanceManager;
+
+        /// <summary>
+        /// Процессор параллельной обработки ботов.
+        /// </summary>
+        private ParallelBotProcessor _botProcessor;
+
+        /// <summary>
+        /// Инициализирует системы оптимизации.
+        /// </summary>
+        private void InitializeOptimization()
+        {
+            _performanceManager = new PerformanceManager();
+            _botProcessor = new ParallelBotProcessor(
+                maxThreads: _config.ThreadCount,
+                cellSize: 10
+            );
+        }
+
+        /// <summary>
+        /// Возвращает статистику производительности.
+        /// </summary>
+        public string GetPerformanceSummary()
+        {
+            return _performanceManager?.GetSummary() ?? "No data";
         }
 
         #endregion

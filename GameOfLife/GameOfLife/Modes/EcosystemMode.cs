@@ -107,7 +107,10 @@ namespace GameOfLife.Modes
         public void Initialize(SimulationConfig config)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
-            _random = new Random(config.Seed);
+
+            // Используем эффективный сид для воспроизводимости
+            _random = new Random(_config.GetEffectiveSeed());
+
             _bots = new Dictionary<int, Bot>();
             _worldResources = new Dictionary<(int, int), ResourcePool>();
             _nextBotId = 1;
@@ -159,7 +162,7 @@ namespace GameOfLife.Modes
         /// <returns>Созданный экземпляр бота.</returns>
         public Bot SpawnBot(int x, int y, GenomeClass genome = null)
         {
-            var newGenome = genome ?? Genome.CreateRandom(_random);
+            var newGenome = genome ?? GenomeClass.CreateRandom(_random);
             var bot = new Bot(_nextBotId++, x, y, newGenome);
             _bots[bot.Id] = bot;
             return bot;

@@ -1,3 +1,5 @@
+using System;
+
 namespace GameOfLife.Core
 {
     /// <summary>
@@ -50,6 +52,28 @@ namespace GameOfLife.Core
         public int ThreadCount { get; set; } = 0;
 
         /// <summary>
+        /// Сид для генератора случайных чисел.
+        /// 
+        /// Используется для воспроизводимости симуляций:
+        /// - Один и тот же сид = одинаковая последовательность случайных событий
+        /// - Полезно для отладки, тестов и сравнения стратегий
+        /// - Значение -1 означает использование случайного сида
+        /// 
+        /// Диапазон: любое целое число (включая отрицательные)
+        /// </summary>
+        public int Seed { get; set; } = -1;
+
+        /// <summary>
+        /// Получает эффективный сид для использования.
+        /// Если Seed = -1, генерируется случайное значение.
+        /// </summary>
+        /// <returns>Целое число для инициализации Random.</returns>
+        public int GetEffectiveSeed()
+        {
+            return Seed >= 0 ? Seed : Environment.TickCount;
+        }
+
+        /// <summary>
         /// Создаёт конфигурацию по умолчанию.
         /// </summary>
         public static SimulationConfig CreateDefault()
@@ -63,7 +87,8 @@ namespace GameOfLife.Core
                 MaxGenerations = -1,
                 WrapAround = true,
                 EnableParallelProcessing = true,
-                ThreadCount = 0
+                ThreadCount = 0,
+                Seed = -1
             };
         }
 
@@ -82,7 +107,8 @@ namespace GameOfLife.Core
                 MaxGenerations = -1,
                 WrapAround = true,
                 EnableParallelProcessing = true,
-                ThreadCount = 0
+                ThreadCount = 0,
+                Seed = -1
             };
         }
     }

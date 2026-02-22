@@ -730,5 +730,77 @@ namespace GameOfLife.Entities
         }
 
         #endregion
+
+        #region Торговля и конвертация
+
+        /// <summary>
+        /// Пытается выполнить конвертацию ресурсов по рецепту.
+        /// </summary>
+        /// <param name="recipe">Рецепт для выполнения.</param>
+        /// <returns>True если конвертация успешна.</returns>
+        public bool TryConvertResources(ConversionRecipe recipe)
+        {
+            if (recipe == null || Inventory == null)
+                return false;
+
+            if (!recipe.CanExecute(Inventory, Energy, 0))
+                return false;
+
+            var random = new Random();
+            return recipe.Execute(Inventory, random);
+        }
+
+        /// <summary>
+        /// Создаёт торговое предложение.
+        /// </summary>
+        public TradeOffer CreateTradeOffer(
+            ResourceType offeredResource,
+            float offeredAmount,
+            ResourceType requiredResource,
+            float requiredAmount,
+            int expirationTicks = 100)
+        {
+            if (!IsActive || Inventory == null)
+                return null;
+
+            return TradeManager.Instance.PublishOffer(
+                this,
+                offeredResource,
+                offeredAmount,
+                requiredResource,
+                requiredAmount,
+                expirationTicks
+            );
+        }
+
+        /// <summary>
+        /// Пытается принять лучшее доступное торговое предложение.
+        /// </summary>
+        /// <returns>True если сделка успешна.</returns>
+        public bool TryAcceptBestTrade()
+        {
+            if (!IsActive || Inventory == null)
+                return false;
+
+            var bestOffer = TradeManager.Instance.GetBestOfferForBot(this);
+
+            if (bestOffer != null && bestOffer.CanAccept(this))
+            {
+                return bestOffer.Execute(this);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Обновляет торговые предложения бота.
+        /// Вызывается каждый тик.
+        /// </summary>
+        public void UpdateTradeOffers()
+        {
+            // В полной реализации: управление активными предложениями
+        }
+
+        #endregion
     }
 }

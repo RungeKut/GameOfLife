@@ -754,5 +754,116 @@ namespace GameOfLife.Core
         }
 
         #endregion
+
+        #region Сохранение и загрузка
+
+        /// <summary>
+        /// Менеджер сохранений движка.
+        /// </summary>
+        private Data.SaveLoadManager _saveManager;
+
+        /// <summary>
+        /// Инициализирует менеджер сохранений.
+        /// </summary>
+        private void InitializeSaveManager()
+        {
+            _saveManager = new Data.SaveLoadManager();
+            _saveManager.OnSaveCompleted += path =>
+                Console.WriteLine($"Сохранение создано: {path}");
+            _saveManager.OnLoadCompleted += path =>
+                Console.WriteLine($"Сохранение загружено: {path}");
+            _saveManager.OnSaveLoadError += (path, error) =>
+                Console.WriteLine($"Ошибка сохранения/загрузки: {error}");
+        }
+
+        /// <summary>
+        /// Сохраняет текущее состояние симуляции.
+        /// </summary>
+        /// <param name="saveName">Имя сохранения.</param>
+        /// <param name="mode">Режим симуляции.</param>
+        /// <returns>Путь к файлу сохранения или null.</returns>
+        public string SaveGame(string saveName = null, string mode = "Conway")
+        {
+            if (_saveManager == null)
+                InitializeSaveManager();
+
+            return _saveManager.Save(this, mode, saveName);
+        }
+
+        /// <summary>
+        /// Загружает состояние симуляции из сохранения.
+        /// </summary>
+        /// <param name="saveName">Имя сохранения.</param>
+        /// <returns>True если загрузка успешна, иначе false.</returns>
+        public bool LoadGame(string saveName)
+        {
+            if (_saveManager == null)
+                InitializeSaveManager();
+
+            var saveData = _saveManager.Load(saveName);
+
+            if (saveData != null)
+            {
+                // Восстанавливаем состояние из данных сохранения
+                RestoreFromSaveData(saveData);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Восстанавливает состояние движка из данных сохранения.
+        /// </summary>
+        private void RestoreFromSaveData(Data.SaveGame saveData)
+        {
+            lock (_lockObject)
+            {
+                // Восстанавливаем конфигурацию
+                _config = saveData.Config;
+
+                // Восстанавливаем размеры мира
+                Width = saveData.WorldWidth;
+                Height = saveData.WorldHeight;
+
+                // Восстанавливаем состояние мира
+                _worldState = saveData.WorldState;
+                _nextWorldState = new bool[Width, Height];
+
+                // Восстанавливаем поколение
+                CurrentGeneration = saveData.CurrentGeneration;
+
+                // Подсчитываем живые клетки
+                LiveCellCount = saveData.LiveCellCount;
+
+                // Уведомляем подписчиков
+                OnWorldUpdated?.Invoke(GetWorldState());
+
+                Console.WriteLine($"Состояние восстановлено: поколение {CurrentGeneration}");
+            }
+        }
+
+        /// <summary>
+        /// Включает автосохранение.
+        /// </summary>
+        /// <param name="intervalMs">Интервал в миллисекундах.</param>
+        public void EnableAutoSave(int intervalMs = 300000)
+        {
+            if (_saveManager == null)
+                InitializeSaveManager();
+
+            _saveManager.AutoSaveInterval = intervalMs;
+            _saveManager.EnableAutoSave();
+        }
+
+        /// <summary>
+        /// Выключает автосохранение.
+        /// </summary>
+        public void DisableAutoSave()
+        {
+            _saveManager?.DisableAutoSave();
+        }
+
+        #endregion
     }
 }

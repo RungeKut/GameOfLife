@@ -389,6 +389,9 @@ namespace GameOfLife.Core
 
             // Меняем буферы местами
             SwapBuffers();
+
+            // Уведомляем рендерер
+            _renderer?.Render(GetWorldState());
         }
 
         /// <summary>
@@ -606,6 +609,54 @@ namespace GameOfLife.Core
 		{
 			_mode = mode;
 			_mode.Initialize(_config);
+		}
+		
+		#endregion
+		
+		#region Рендеринг
+		
+		/// <summary>
+		/// Текущий рендерер.
+		/// </summary>
+		private IRenderer _renderer;
+		
+		/// <summary>
+		/// Устанавливает рендерер для визуализации.
+		/// </summary>
+		/// <param name="renderer">Рендерер для использования.</param>
+		public void SetRenderer(IRenderer renderer)
+		{
+			// Отписываемся от старого рендерера
+			if (_renderer != null)
+			{
+				_renderer.OnRenderCompleted -= OnRenderCompleted;
+				_renderer.Dispose();
+			}
+		
+			_renderer = renderer;
+		
+			// Подписываемся на новый рендерер
+			if (_renderer != null)
+			{
+				_renderer.OnRenderCompleted += OnRenderCompleted;
+			}
+		}
+		
+		/// <summary>
+		/// Получает текущий рендерер.
+		/// </summary>
+		public IRenderer GetRenderer()
+		{
+			return _renderer;
+		}
+		
+		/// <summary>
+		/// Обработчик завершения отрисовки кадра.
+		/// </summary>
+		private void OnRenderCompleted(RenderStats stats)
+		{
+			// Можно добавить логирование или статистику
+			// Console.WriteLine($"Render: Gen {stats.Generation}, Time: {stats.RenderTimeMs}ms");
 		}
 		
 		#endregion

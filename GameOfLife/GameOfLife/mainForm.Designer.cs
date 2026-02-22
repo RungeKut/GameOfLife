@@ -7,19 +7,6 @@
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        /// Освободить все используемые ресурсы.
-        /// </summary>
-        /// <param name="disposing">истинно, если управляемый ресурс должен быть удален; иначе ложно.</param>
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (components != null))
-            {
-                components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
         #region Код, автоматически созданный конструктором форм Windows
 
         /// <summary>
@@ -28,7 +15,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
             this.GridCheckBox = new System.Windows.Forms.CheckBox();
             this.WorldWidthNumericUpDown = new System.Windows.Forms.NumericUpDown();
             this.WorldHeightNumericUpDown = new System.Windows.Forms.NumericUpDown();
@@ -42,7 +28,6 @@
             this.nudDensity = new System.Windows.Forms.NumericUpDown();
             this.label2 = new System.Windows.Forms.Label();
             this.pictureBox = new System.Windows.Forms.PictureBox();
-            this.timer = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.WorldWidthNumericUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.WorldHeightNumericUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudRefresh)).BeginInit();
@@ -260,11 +245,6 @@
             this.pictureBox.MouseClick += new System.Windows.Forms.MouseEventHandler(this.pictureBox_MouseClick);
             this.pictureBox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pictureBox_MouseMove);
             // 
-            // timer
-            // 
-            this.timer.Interval = 200;
-            this.timer.Tick += new System.EventHandler(this.timer_Tick);
-            // 
             // mainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -302,7 +282,6 @@
         private System.Windows.Forms.Button bStart;
         private System.Windows.Forms.NumericUpDown nudDensity;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Timer timer;
         private System.Windows.Forms.NumericUpDown nudRefresh;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.PictureBox pictureBox;

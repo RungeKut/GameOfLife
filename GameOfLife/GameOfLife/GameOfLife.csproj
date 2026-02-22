@@ -57,9 +57,19 @@
     
     <!-- Режимы симуляции -->
     <Compile Include="Modes\ConwayMode.cs" />
+	
+	<!-- Рендеринг -->
+  <Compile Include="Rendering\IRenderer.cs" />
+  <Compile Include="Rendering\BitmapRenderer.cs" />
+  <Compile Include="Rendering\WinFormsRenderer.cs" />
+  <Compile Include="Rendering\NullRenderer.cs" />
+  
+  <!-- Экспорт -->
+  <Compile Include="Export\GifExporter.cs" />
     
     <!-- Утилиты -->
     <Compile Include="Point2D.cs" />
+	<Compile Include="StatusEngine.cs" />
     
     <!-- UI (будет обновлено на следующем этапе) -->
     <Compile Include="mainForm.cs">

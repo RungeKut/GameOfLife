@@ -34,8 +34,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="AnimatedGif, Version=1.0.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\AnimatedGif.1.0.5\lib\netstandard2.0\AnimatedGif.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing.Common, Version=4.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Drawing.Common.4.5.0\lib\net461\System.Drawing.Common.dll</HintPath>
+    </Reference>
     <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -54,23 +60,18 @@
     <Compile Include="Core\SimulationStatus.cs" />
     <Compile Include="Core\WorldState.cs" />
     <Compile Include="Core\ISimulationMode.cs" />
-    
     <!-- Режимы симуляции -->
     <Compile Include="Modes\ConwayMode.cs" />
-	
-	<!-- Рендеринг -->
-  <Compile Include="Rendering\IRenderer.cs" />
-  <Compile Include="Rendering\BitmapRenderer.cs" />
-  <Compile Include="Rendering\WinFormsRenderer.cs" />
-  <Compile Include="Rendering\NullRenderer.cs" />
-  
-  <!-- Экспорт -->
-  <Compile Include="Export\GifExporter.cs" />
-    
+    <!-- Рендеринг -->
+    <Compile Include="Rendering\IRenderer.cs" />
+    <Compile Include="Rendering\BitmapRenderer.cs" />
+    <Compile Include="Rendering\WinFormsRenderer.cs" />
+    <Compile Include="Rendering\NullRenderer.cs" />
+    <!-- Экспорт -->
+    <Compile Include="Export\GifExporter.cs" />
     <!-- Утилиты -->
     <Compile Include="Point2D.cs" />
-	<Compile Include="StatusEngine.cs" />
-    
+    <Compile Include="StatusEngine.cs" />
     <!-- UI (будет обновлено на следующем этапе) -->
     <Compile Include="mainForm.cs">
       <SubType>Form</SubType>
@@ -78,10 +79,8 @@
     <Compile Include="mainForm.Designer.cs">
       <DependentUpon>mainForm.cs</DependentUpon>
     </Compile>
-    
     <!-- Точка входа -->
     <Compile Include="Program.cs" />
-    
     <!-- Свойства проекта -->
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="mainForm.resx">
@@ -97,6 +96,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

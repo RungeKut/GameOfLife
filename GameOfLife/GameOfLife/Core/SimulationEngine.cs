@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using GameOfLife.Rendering;
 
 namespace GameOfLife.Core
 {
@@ -53,6 +54,12 @@ namespace GameOfLife.Core
         private bool[,] _nextWorldState;
 
         /// <summary>
+        /// Приватное поле для подсчёта живых клеток.
+        /// Используется для атомарных операций Interlocked.
+        /// </summary>
+        private int _liveCellCount;
+
+        /// <summary>
         /// Токен отмены для асинхронного выполнения.
         /// </summary>
         private CancellationTokenSource _cancellationTokenSource;
@@ -92,9 +99,9 @@ namespace GameOfLife.Core
         public int Height { get; private set; }
 
         /// <summary>
-        /// Общее количество живых клеток.
+        /// Общее количество живых клеток (только для чтения извне).
         /// </summary>
-        public int LiveCellCount { get; private set; }
+        public int LiveCellCount => _liveCellCount;
 
         /// <summary>
         /// Конфигурация симуляции (только для чтения).
@@ -139,7 +146,7 @@ namespace GameOfLife.Core
             _worldState = new bool[Width, Height];
             _nextWorldState = new bool[Width, Height];
 
-            LiveCellCount = 0;
+            _liveCellCount = 0;
             CurrentGeneration = 0;
         }
 
@@ -165,7 +172,7 @@ namespace GameOfLife.Core
                 _worldState = new bool[Width, Height];
                 _nextWorldState = new bool[Width, Height];
 
-                LiveCellCount = 0;
+                _liveCellCount = 0;
                 CurrentGeneration = 0;
 
                 // Уведомляем подписчиков об изменении
@@ -184,7 +191,7 @@ namespace GameOfLife.Core
                 density = Math.Max(0, Math.Min(100, density));
                 
                 var random = new Random();
-                LiveCellCount = 0;
+                _liveCellCount = 0;
 
                 for (int x = 0; x < Width; x++)
                 {
@@ -195,7 +202,7 @@ namespace GameOfLife.Core
                         _worldState[x, y] = isAlive;
                         
                         if (isAlive)
-                            LiveCellCount++;
+                            _liveCellCount++;
                     }
                 }
 
@@ -219,7 +226,7 @@ namespace GameOfLife.Core
                     }
                 }
 
-                LiveCellCount = 0;
+                _liveCellCount = 0;
                 CurrentGeneration = 0;
                 OnWorldUpdated?.Invoke(GetWorldState());
             }
@@ -362,7 +369,7 @@ namespace GameOfLife.Core
         /// </summary>
         private void ComputeNextGeneration()
         {
-            LiveCellCount = 0;
+            _liveCellCount = 0;
 
             // Параллельная обработка по строкам (если включено)
             if (_config.EnableParallelProcessing)
@@ -422,7 +429,7 @@ namespace GameOfLife.Core
             // Считаем живые клетки (атомарно для параллельного режима)
             if (willBeAlive)
             {
-                Interlocked.Increment(ref LiveCellCount);
+                Interlocked.Increment(ref _liveCellCount);
             }
         }
 
@@ -522,9 +529,9 @@ namespace GameOfLife.Core
                 if (_worldState[x, y] != isAlive)
                 {
                     if (isAlive)
-                        LiveCellCount++;
+                        _liveCellCount++;
                     else
-                        LiveCellCount--;
+                        _liveCellCount--;
 
                     _worldState[x, y] = isAlive;
                 }
@@ -573,7 +580,7 @@ namespace GameOfLife.Core
                 Generation = CurrentGeneration,
                 Width = Width,
                 Height = Height,
-                LiveCellCount = LiveCellCount,
+                LiveCellCount = _liveCellCount,
                 Status = Status,
                 WorldArray = GetWorldArray()
             };

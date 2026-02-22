@@ -865,5 +865,51 @@ namespace GameOfLife.Core
         }
 
         #endregion
+
+        #region Производительность и мониторинг
+
+        /// <summary>
+        /// Монитор производительности симуляции.
+        /// </summary>
+        private PerformanceMonitor _performanceMonitor;
+
+        /// <summary>
+        /// Менеджер пулов объектов.
+        /// </summary>
+        private PoolManager _poolManager;
+
+        /// <summary>
+        /// Включить ли мониторинг производительности.
+        /// </summary>
+        public bool EnablePerformanceMonitoring { get; set; } = false;
+
+        /// <summary>
+        /// Инициализирует системы мониторинга.
+        /// </summary>
+        private void InitializePerformanceSystems()
+        {
+            _performanceMonitor = new PerformanceMonitor(EnablePerformanceMonitoring);
+            _poolManager = new PoolManager();
+        }
+
+        /// <summary>
+        /// Получает отчёт о производительности.
+        /// </summary>
+        /// <returns>Строка с отчётом.</returns>
+        public string GetPerformanceReport()
+        {
+            return _performanceMonitor?.GetReport() ?? "Мониторинг отключён";
+        }
+
+        /// <summary>
+        /// Получает статистику пулов объектов.
+        /// </summary>
+        /// <returns>Строка со статистикой.</returns>
+        public string GetPoolStatistics()
+        {
+            return _poolManager?.GetStatistics() ?? "Пулы не инициализированы";
+        }
+
+        #endregion
     }
 }

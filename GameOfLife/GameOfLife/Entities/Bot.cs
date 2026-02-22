@@ -1,9 +1,10 @@
-﻿using System;
-using System.Linq;
-using GameOfLife.Core;
-using GameOfLife.Resources;
+﻿using GameOfLife.Core;
+using GameOfLife.Environment;
 using GameOfLife.Genome;
-
+using GameOfLife.Resources;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 // Псевдоним для разрешения конфликта имён: namespace GameOfLife.Genome vs class Genome
 using GenomeClass = GameOfLife.Genome.Genome;
 
@@ -621,76 +622,113 @@ namespace GameOfLife.Entities
         }
 
         #endregion
-    }
 
-    /// <summary>
-    /// Статистика бота для анализа и отладки.
-    /// </summary>
-    public class BotStatistics
-    {
-        /// <summary>
-        /// Причина смерти (если бот умер).
-        /// </summary>
-        public DeathReason? DeathReason { get; set; }
+        #region Воздействие окружающей среды
 
         /// <summary>
-        /// Тик смерти (возраст на момент смерти).
+        /// Применяет воздействие погоды на бота.
+        /// 
+        /// Вызывается из Tick() после основных действий.
+        /// Учитывает:
+        /// - Расход энергии из-за температуры
+        /// - Вероятность сдувания ветром
+        /// - Ограничения движения в шторм
         /// </summary>
-        public int? DeathTick { get; set; }
-
-        /// <summary>
-        /// Количество произведённого потомства.
-        /// </summary>
-        public int OffspringCount { get; set; }
-
-        /// <summary>
-        /// Максимальный достигнутый уровень энергии.
-        /// </summary>
-        public float MaxEnergyReached { get; private set; }
-
-        /// <summary>
-        /// Общее количество собранных ресурсов.
-        /// </summary>
-        public float TotalResourcesGathered { get; private set; }
-
-        /// <summary>
-        /// Обновляет статистику на основе текущего состояния бота.
-        /// </summary>
-        public void Update(Bot bot)
+        /// <param name="weather">
+        /// Система погоды мира.
+        /// </param>
+        public void ApplyWeatherEffect(WeatherSystem weather)
         {
-            MaxEnergyReached = Math.Max(MaxEnergyReached, bot.Energy);
-            // TotalResourcesGathered обновляется при сборе ресурсов
+            if (!IsActive)
+                return;
+
+            // Модификатор расхода энергии из-за погоды
+            float costModifier = weather.GetEnergyCostModifier();
+            Energy -= Genome.GetMetabolismCost() * (costModifier - 1.0f);
+
+            // Проверка на сдувание ветром
+            if (weather.WillBotBeBlownAway(Energy, Genome.MaxEnergy))
+            {
+                var (dx, dy) = weather.GetBlowDirection();
+
+                // Перемещаем бота в направлении ветра
+                int newX = X + dx;
+                int newY = Y + dy;
+
+                // В полной реализации: проверка границ и занятости клетки
+                if (newX >= 0 && newX < 100 && newY >= 0 && newY < 100)
+                {
+                    _x = newX;
+                    _y = newY;
+                }
+            }
         }
-    }
-
-    /// <summary>
-    /// Возможные причины смерти бота.
-    /// </summary>
-    public enum DeathReason
-    {
-        /// <summary>
-        /// Смерть от истощения энергии.
-        /// </summary>
-        Starvation,
 
         /// <summary>
-        /// Смерть от потери здоровья (урон, токсичность).
+        /// Применяет воздействие радиации на бота.
+        /// 
+        /// Вызывается из Tick() после основных действий.
+        /// Учитывает:
+        /// - Урон здоровью
+        /// - Вероятность мутации генома
         /// </summary>
-        Injury,
+        /// <param name="radiationManager">
+        /// Менеджер радиоактивных зон.
+        /// </param>
+        public void ApplyRadiationEffect(RadiationManager radiationManager)
+        {
+            if (!IsActive)
+                return;
+
+            var effect = radiationManager.ApplyRadiationToBot(this);
+
+            // Логирование для отладки
+            if (effect.DamageDealt > 0)
+            {
+                // Console.WriteLine($"Bot {Id} took {effect.DamageDealt:F1} radiation damage");
+            }
+            if (effect.MutationOccurred)
+            {
+                // Console.WriteLine($"Bot {Id} mutated due to radiation");
+            }
+        }
 
         /// <summary>
-        /// Естественная смерть от старости.
+        /// Применяет воздействие магнитных аномалий на бота.
+        /// 
+        /// Вызывается из Tick() при выполнении движения.
+        /// Учитывает:
+        /// - Дезориентацию направления
+        /// - Ошибки в программе движения
         /// </summary>
-        OldAge,
+        /// <param name="anomalies">
+        /// Список магнитных аномалий в мире.
+        /// </param>
+        /// <param name="direction">
+        /// Исходное направление движения.
+        /// </param>
+        /// <returns>
+        /// Возможно искажённое направление.
+        /// </returns>
+        public Genome.MovementDirection ApplyMagneticEffect(
+            List<MagneticField> anomalies,
+            Genome.MovementDirection direction,
+            Random random)
+        {
+            if (!IsActive)
+                return direction;
 
-        /// <summary>
-        /// Смерть от радиоактивного облучения.
-        /// </summary>
-        Radiation,
+            foreach (var anomaly in anomalies)
+            {
+                if (anomaly.IsActive && anomaly.ContainsPoint(X, Y))
+                {
+                    return anomaly.GetDistortedDirection(direction, X, Y, random);
+                }
+            }
 
-        /// <summary>
-        /// Смерть в результате атаки другим ботом.
-        /// </summary>
-        Combat
+            return direction;
+        }
+
+        #endregion
     }
 }

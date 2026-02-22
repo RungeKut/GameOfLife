@@ -1,11 +1,11 @@
-﻿using System;
+﻿using GameOfLife.Core;
+using GameOfLife.Entities;
+using GameOfLife.Environment;
+using GameOfLife.Genome;
+using GameOfLife.Resources;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using GameOfLife.Core;
-using GameOfLife.Entities;
-using GameOfLife.Resources;
-using GameOfLife.Genome;
-
 // Псевдоним для разрешения конфликта имён: namespace GameOfLife.Genome vs class Genome
 using GenomeClass = GameOfLife.Genome.Genome;
 
@@ -78,6 +78,21 @@ namespace GameOfLife.Modes
         /// </summary>
         private EnvironmentState _currentEnvironment;
 
+        /// <summary>
+        /// Система погоды мира.
+        /// </summary>
+        private WeatherSystem _weatherSystem;
+
+        /// <summary>
+        /// Менеджер радиоактивных зон.
+        /// </summary>
+        private RadiationManager _radiationManager;
+
+        /// <summary>
+        /// Список магнитных аномалий.
+        /// </summary>
+        private List<MagneticField> _magneticAnomalies;
+
         #endregion
 
         #region Публичные свойства
@@ -116,6 +131,19 @@ namespace GameOfLife.Modes
             _nextBotId = 1;
             CurrentGeneration = 0;
             _currentEnvironment = new EnvironmentState();
+
+            _weatherSystem = new WeatherSystem(_config.GetEffectiveSeed(), 1000);
+            _radiationManager = new RadiationManager(_config.GetEffectiveSeed());
+            _magneticAnomalies = new List<MagneticField>();
+
+            // Генерация начальных зон
+            _radiationManager.GenerateRandomZones(
+                _config.WorldWidth,
+                _config.WorldHeight,
+                zoneCount: 3,
+                minRadius: 5,
+                maxRadius: 15
+            );
 
             // Инициализируем ресурсы в мире
             InitializeWorldResources();
@@ -219,13 +247,20 @@ namespace GameOfLife.Modes
             CurrentGeneration = generation;
 
             // 1. Обновляем окружающую среду
+            _weatherSystem.Update(CurrentGeneration);
+            _radiationManager.Update();
+
+            // 2. Обновляем ботов с учётом среды
+            UpdateBotsWithEnvironment();
+
+            // 1. Обновляем окружающую среду
             UpdateEnvironment();
 
             // 2. Обновляем ресурсы в мире
             UpdateWorldResources();
 
             // 3. Обновляем всех ботов
-            UpdateBots();
+            //UpdateBots();
 
             // 4. Удаляем мёртвых ботов
             CleanupDeadBots();
@@ -290,6 +325,32 @@ namespace GameOfLife.Modes
                     // Передаём ссылку на движок для запросов
                     // В полной реализации здесь был бы интерфейс IBotEngine
                     bot.Tick(null);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Обновляет всех активных ботов с учётом воздействия среды.
+        /// </summary>
+        private void UpdateBotsWithEnvironment()
+        {
+            var botIds = _bots.Keys.ToList();
+
+            foreach (var id in botIds)
+            {
+                if (_bots.TryGetValue(id, out var bot) && bot.IsActive)
+                {
+                    // Основное обновление бота
+                    bot.Tick(null);
+
+                    // Воздействие погоды
+                    bot.ApplyWeatherEffect(_weatherSystem);
+
+                    // Воздействие радиации
+                    bot.ApplyRadiationEffect(_radiationManager);
+
+                    // Воздействие магнитных аномалий
+                    // (интегрируется в программу движения)
                 }
             }
         }

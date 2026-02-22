@@ -193,7 +193,7 @@ namespace GameOfLife.Core
         {
             if (seed < 0)
             {
-                seed = Environment.TickCount;
+                seed = System.Environment.TickCount;
             }
             _random = new Random(seed);
             TotalConflictsResolved = 0;

@@ -70,7 +70,7 @@ namespace GameOfLife.Core
         /// <returns>Целое число для инициализации Random.</returns>
         public int GetEffectiveSeed()
         {
-            return Seed >= 0 ? Seed : Environment.TickCount;
+            return Seed >= 0 ? Seed : System.Environment.TickCount;
         }
 
         /// <summary>

@@ -1,7 +1,8 @@
+using GameOfLife.Rendering;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using GameOfLife.Rendering;
 
 namespace GameOfLife.Core
 {
@@ -665,7 +666,57 @@ namespace GameOfLife.Core
 			// Можно добавить логирование или статистику
 			// Console.WriteLine($"Render: Gen {stats.Generation}, Time: {stats.RenderTimeMs}ms");
 		}
-		
-		#endregion
+
+        #endregion
+
+        #region Разрешение конфликтов
+
+        /// <summary>
+        /// Система разрешения конфликтов движения ботов.
+        /// 
+        /// Обеспечивает изотропность пространства — результат
+        /// не зависит от порядка обработки ботов в цикле.
+        /// </summary>
+        private ConflictResolver _conflictResolver;
+
+        /// <summary>
+        /// Инициализирует систему разрешения конфликтов.
+        /// Вызывается в конструкторе после инициализации мира.
+        /// </summary>
+        private void InitializeConflictResolver()
+        {
+            _conflictResolver = new ConflictResolver(_config.Seed);
+            _conflictResolver.OnConflictResolved += OnConflictResolved;
+        }
+
+        /// <summary>
+        /// Обработчик события разрешения конфликта.
+        /// Может использоваться для логирования и статистики.
+        /// </summary>
+        private void OnConflictResolved(
+            Entities.Bot winner,
+            Entities.Bot loser,
+            ConflictResult result)
+        {
+            // Логирование конфликта для отладки
+            // Console.WriteLine($"Conflict: {winner.Id} vs {loser.Id}");
+        }
+
+        /// <summary>
+        /// Разрешает конфликты между намерениями ботов.
+        /// Вызывается в Step() перед выполнением действий.
+        /// </summary>
+        /// <param name="intentions">Список намерений всех ботов.</param>
+        /// <returns>Список разрешённых намерений.</returns>
+        private List<ActionIntention> ResolveBotConflicts(List<ActionIntention> intentions)
+        {
+            return _conflictResolver.ResolveConflicts(
+                intentions,
+                Width,
+                Height
+            );
+        }
+
+        #endregion
     }
 }

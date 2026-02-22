@@ -483,6 +483,144 @@ namespace GameOfLife.Entities
         }
 
         #endregion
+
+        #region Намерения действий
+
+        /// <summary>
+        /// Создаёт намерение действия для следующего тика.
+        /// 
+        /// В отличие от Tick() который выполняет действие сразу,
+        /// этот метод только декларирует желание бота выполнить
+        /// действие без фактического изменения состояния мира.
+        /// 
+        /// Намерение будет передано в ConflictResolver который
+        /// разрешит конфликты с другими ботами перед выполнением.
+        /// </summary>
+        /// <returns>Намерение действия или null если бот неактивен.</returns>
+        public ActionIntention CreateIntention()
+        {
+            if (!IsActive)
+                return null;
+
+            // В полной реализации: анализ состояния и создание намерения
+            // на основе генома и контекста
+            return new ActionIntention(this)
+            {
+                Type = IntentionType.Stay,
+                TargetX = X,
+                TargetY = Y,
+                Priority = Energy
+            };
+        }
+
+        /// <summary>
+        /// Выполняет разрешённое намерение действия.
+        /// 
+        /// Вызывается после разрешения конфликтов только для
+        /// намерений с IsResolved = true и IsSuccessful = true.
+        /// </summary>
+        /// <param name="intention">Разрешённое намерение для выполнения.</param>
+        public void ExecuteIntention(ActionIntention intention)
+        {
+            if (!intention.IsSuccessful)
+                return;
+
+            switch (intention.Type)
+            {
+                case IntentionType.Move:
+                    MoveTo(intention.TargetX, intention.TargetY);
+                    break;
+                case IntentionType.Attack:
+                    ExecuteAttack(intention.TargetX, intention.TargetY);
+                    break;
+                case IntentionType.Gather:
+                    GatherResources();
+                    break;
+                case IntentionType.Build:
+                    BuildStructure();
+                    break;
+                case IntentionType.Rest:
+                    Rest();
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Обработка ситуации когда намерение было отклонено.
+        /// 
+        /// Вызывается для ботов чьи намерения не прошли разрешение
+        /// конфликтов. Бот может:
+        /// - Остаться на текущей клетке
+        /// - Попытаться найти альтернативное действие
+        /// - Получить урон от конфликта
+        /// </summary>
+        /// <param name="rejectedIntention">Отклонённое намерение.</param>
+        public void OnIntentionRejected(ActionIntention rejectedIntention)
+        {
+            // Бот остаётся на текущей позиции
+            // В полной реализации: поиск альтернативного действия
+        }
+
+        #endregion
+
+        #region Выполнение намерений
+
+        /// <summary>
+        /// Перемещает бота в указанную клетку.
+        /// Вызывается только для разрешённых намерений.
+        /// </summary>
+        private void MoveTo(int targetX, int targetY)
+        {
+            // Проверка границ мира
+            if (targetX < 0 || targetX >= 100 || targetY < 0 || targetY >= 100)
+                return;
+
+            // Проверка достаточно ли энергии
+            if (Energy < 1.0f)
+                return;
+
+            // Перемещаем бота
+            _x = targetX;
+            _y = targetY;
+            Energy -= 1.0f; // Стоимость перемещения
+        }
+
+        /// <summary>
+        /// Выполняет атаку на целевую клетку.
+        /// Вызывается только для разрешённых намерений.
+        /// </summary>
+        private void ExecuteAttack(int targetX, int targetY)
+        {
+            // Проверка достаточно ли энергии
+            if (Energy < 2.0f)
+                return;
+
+            // В полной реализации: поиск цели в целевой клетке и нанесение урона
+            // Сейчас: просто тратим энергию
+            Energy -= 2.0f;
+        }
+
+        /// <summary>
+        /// Собирает ресурсы в текущей клетке.
+        /// Заглушка для Этапа 5.
+        /// </summary>
+        private void GatherResources()
+        {
+            // TODO: Этап 6 - Реализация системы ресурсов
+            // В полной реализации: запрос к ResourceManager мира
+        }
+
+        /// <summary>
+        /// Строит структуру в текущей клетке.
+        /// Заглушка для Этапа 5.
+        /// </summary>
+        private void BuildStructure()
+        {
+            // TODO: Этап 6 - Реализация системы строительства
+            // В полной реализации: проверка материалов, создание Structure
+        }
+
+        #endregion
     }
 
     /// <summary>

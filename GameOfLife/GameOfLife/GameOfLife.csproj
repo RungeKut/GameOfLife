@@ -61,8 +61,15 @@
     <Compile Include="Core\WorldState.cs" />
     <Compile Include="Core\ISimulationMode.cs" />
     <!-- Режимы симуляции -->
+    <Compile Include="Entities\Bot.cs" />
+    <Compile Include="Entities\IEntity.cs" />
+    <Compile Include="Genome\BehaviorDecision.cs" />
+    <Compile Include="Genome\Genome.cs" />
+    <Compile Include="Genome\GenomeExtensions.cs" />
+    <Compile Include="Genome\MovementInstruction.cs" />
     <Compile Include="Modes\ConwayMode.cs" />
     <!-- Рендеринг -->
+    <Compile Include="Modes\EcosystemMode.cs" />
     <Compile Include="Rendering\IRenderer.cs" />
     <Compile Include="Rendering\BitmapRenderer.cs" />
     <Compile Include="Rendering\WinFormsRenderer.cs" />
@@ -71,6 +78,8 @@
     <Compile Include="Export\GifExporter.cs" />
     <!-- Утилиты -->
     <Compile Include="Point2D.cs" />
+    <Compile Include="Resources\ResourcePool.cs" />
+    <Compile Include="Resources\ResourceType.cs" />
     <Compile Include="StatusEngine.cs" />
     <!-- UI (будет обновлено на следующем этапе) -->
     <Compile Include="mainForm.cs">

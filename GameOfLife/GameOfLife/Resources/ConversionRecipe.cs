@@ -515,6 +515,17 @@ namespace GameOfLife.Resources
         }
 
         /// <summary>
+        /// Устанавливает вероятность успеха конвертации.
+        /// </summary>
+        /// <param name="chance">Вероятность от 0.0 до 1.0.</param>
+        /// <returns>Сам рецепт для продолжения цепочки вызовов.</returns>
+        public ConversionRecipe WithSuccessChance(float chance)
+        {
+            SuccessChance = Math.Max(0, Math.Min(1, chance));
+            return this;
+        }
+
+        /// <summary>
         /// Создаёт рецепт переработки радиоактивного материала.
         /// 
         /// 1 Radioactive → 50 Energy (с риском)
@@ -524,7 +535,7 @@ namespace GameOfLife.Resources
             return new ConversionRecipe("RadioactiveProcessing", 10)
                 .AddInput(ResourceType.Radioactive, 1)
                 .AddOutput(ResourceType.Food, 50)
-                .SuccessChance = 0.7f; // 30% риск неудачи
+                .WithSuccessChance(0.7f); // 30% риск неудачи
         }
 
         #endregion

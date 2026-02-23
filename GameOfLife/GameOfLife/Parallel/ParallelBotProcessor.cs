@@ -189,7 +189,7 @@ namespace GameOfLife.Parallel
                 ActiveThreadCount = _maxThreads;
 
                 // Параллельная обработка всех ботов
-                Parallel.ForEach(bots, parallelOptions, bot =>
+                System.Threading.Tasks.Parallel.ForEach(bots, parallelOptions, bot =>
                 {
                     if (bot.IsActive)
                     {

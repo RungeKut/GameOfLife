@@ -208,7 +208,9 @@ namespace GameOfLife.Resources
             {
                 if (_offers.TryGetValue(offerId, out var offer))
                 {
-                    offer.IsActive = false;
+                    // ✅ Используем публичный метод вместо прямого присваивания
+                    offer.Deactivate();
+
                     _offers.Remove(offerId);
 
                     // Удаляем из индекса

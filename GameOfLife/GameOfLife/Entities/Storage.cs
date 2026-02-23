@@ -29,7 +29,7 @@ namespace GameOfLife.Entities
         /// <summary>
         /// Хранилище ресурсов структуры.
         /// </summary>
-        private readonly ResourcePool _storage;
+        private readonly ResourcePool _resourceStorage;
 
         /// <summary>
         /// Максимальная вместимость хранилища.
@@ -43,12 +43,12 @@ namespace GameOfLife.Entities
         /// <summary>
         /// Хранилище ресурсов (только для чтения).
         /// </summary>
-        public ResourcePool Storage => _storage;
+        public ResourcePool ResourceStorage => _resourceStorage;
 
         /// <summary>
         /// Текущая заполненность хранилища.
         /// </summary>
-        public float CurrentCapacity => _storage.TotalWeight;
+        public float CurrentCapacity => _resourceStorage.TotalWeight;
 
         /// <summary>
         /// Максимальная вместимость хранилища.
@@ -78,7 +78,7 @@ namespace GameOfLife.Entities
         public Storage(int id, int x, int y, Bot owner = null)
             : base(id, x, y, StructureType.Storage, owner)
         {
-            _storage = new ResourcePool(-1);
+            _resourceStorage = new ResourcePool(-1);
             InitializeCapacity();
         }
 
@@ -93,7 +93,7 @@ namespace GameOfLife.Entities
         {
             // Вместимость зависит от уровня структуры
             _maxCapacity = 100 * Level;
-            _storage.MaxCapacity = _maxCapacity;
+            _resourceStorage.MaxCapacity = _maxCapacity;
         }
 
         #endregion
@@ -111,7 +111,7 @@ namespace GameOfLife.Entities
             {
                 // Обновляем вместимость при улучшении
                 _maxCapacity = 100 * Level;
-                _storage.MaxCapacity = _maxCapacity;
+                _resourceStorage.MaxCapacity = _maxCapacity;
             }
         }
 
@@ -142,7 +142,7 @@ namespace GameOfLife.Entities
             if (!IsActive)
                 return false;
 
-            return _storage.Add(type, amount);
+            return _resourceStorage.Add(type, amount);
         }
 
         /// <summary>
@@ -153,7 +153,7 @@ namespace GameOfLife.Entities
             if (!IsActive)
                 return false;
 
-            return _storage.Remove(type, amount);
+            return _resourceStorage.Remove(type, amount);
         }
 
         /// <summary>
@@ -161,7 +161,7 @@ namespace GameOfLife.Entities
         /// </summary>
         public bool HasResource(ResourceType type, float amount)
         {
-            return _storage.HasEnough(type, amount);
+            return _resourceStorage.HasEnough(type, amount);
         }
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace GameOfLife.Entities
         /// </summary>
         public float GetResourceAmount(ResourceType type)
         {
-            return _storage.GetAmount(type);
+            return _resourceStorage.GetAmount(type);
         }
 
         /// <summary>
@@ -177,8 +177,8 @@ namespace GameOfLife.Entities
         /// </summary>
         public ResourcePool Clear()
         {
-            var contents = _storage.Clone();
-            _storage.Clear();
+            var contents = _resourceStorage.Clone();
+            _resourceStorage.Clear();
             return contents;
         }
 

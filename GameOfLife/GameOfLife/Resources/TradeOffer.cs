@@ -76,7 +76,7 @@ namespace GameOfLife.Resources
         /// <summary>
         /// Количество предлагаемого ресурса.
         /// </summary>
-        public float OfferedAmount { get; }
+        public float OfferedAmount { get; private set; }
 
         /// <summary>
         /// Тип ресурса который требуется взамен.
@@ -86,7 +86,7 @@ namespace GameOfLife.Resources
         /// <summary>
         /// Количество требуемого ресурса.
         /// </summary>
-        public float RequiredAmount { get; }
+        public float RequiredAmount { get; private set; }
 
         /// <summary>
         /// Время создания предложения.
@@ -441,6 +441,31 @@ namespace GameOfLife.Resources
         {
             return $"{OfferedAmount} {OfferedResource?.Name} → {RequiredAmount} {RequiredResource?.Name} " +
                    $"(Rate: {ExchangeRate:F2}, Active: {IsActive})";
+        }
+
+        #endregion
+
+        #region Управление состоянием
+
+        /// <summary>
+        /// Деактивирует предложение (отменяет его).
+        /// 
+        /// Вызывается когда продавец отменяет предложение
+        /// или когда предложение истекает.
+        /// </summary>
+        public void Deactivate()
+        {
+            IsActive = false;
+        }
+
+        /// <summary>
+        /// Проверяет, может ли продавец отменить это предложение.
+        /// </summary>
+        /// <param name="bot">Бот который пытается отменить.</param>
+        /// <returns>True если бот является продавцом и предложение активно.</returns>
+        public bool CanCancel(Entities.Bot bot)
+        {
+            return IsActive && _seller == bot;
         }
 
         #endregion

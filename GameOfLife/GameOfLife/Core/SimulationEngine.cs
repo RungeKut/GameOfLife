@@ -377,7 +377,7 @@ namespace GameOfLife.Core
             // Параллельная обработка по строкам (если включено)
             if (_config.EnableParallelProcessing)
             {
-                Parallel.For(0, Height, y =>
+                System.Threading.Tasks.Parallel.For(0, Height, y =>
                 {
                     for (int x = 0; x < Width; x++)
                     {
@@ -726,7 +726,7 @@ namespace GameOfLife.Core
         /// <summary>
         /// Менеджер счётчиков производительности.
         /// </summary>
-        private PerformanceManager _performanceManager;
+        private PerformanceMonitor _performanceManager;
 
         /// <summary>
         /// Процессор параллельной обработки ботов.
@@ -738,7 +738,7 @@ namespace GameOfLife.Core
         /// </summary>
         private void InitializeOptimization()
         {
-            _performanceManager = new PerformanceManager();
+            _performanceManager = new PerformanceMonitor(isEnabled: true);
             _botProcessor = new ParallelBotProcessor(
                 maxThreads: _config.ThreadCount,
                 cellSize: 10
@@ -750,7 +750,7 @@ namespace GameOfLife.Core
         /// </summary>
         public string GetPerformanceSummary()
         {
-            return _performanceManager?.GetSummary() ?? "No data";
+            return _performanceManager?.GetReport() ?? "Нет данных";
         }
 
         #endregion
@@ -834,7 +834,7 @@ namespace GameOfLife.Core
                 CurrentGeneration = saveData.CurrentGeneration;
 
                 // Подсчитываем живые клетки
-                LiveCellCount = saveData.LiveCellCount;
+                _liveCellCount = saveData.LiveCellCount;
 
                 // Уведомляем подписчиков
                 OnWorldUpdated?.Invoke(GetWorldState());
